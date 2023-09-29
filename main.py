@@ -1210,6 +1210,7 @@ if __name__ == '__main__':
 
     print("******************************************************************************************************")
     print("Initializing MAXON interface, will exit if failed")
+    print("xd")
 
     keyHandle = epos.VCS_OpenDevice(b'EPOS2', b'MAXON SERIAL V2', b'USB', b'USB0',
                                     byref(pErrorCode))  # specify EPOS version and interface
