@@ -61,12 +61,15 @@ PINOUT = { # too lazy to implement and enum right now
     'A_step':               DEVICE_NAME + "/port2/line4",
     'A_dir':                DEVICE_NAME + "/port2/line1",
     'A_en':                 DEVICE_NAME + "/port2/line6",
+    'A_home':               DEVICE_NAME + "/port2/line0"
 }
 
-# directions for A stepper motor
+# constants for A stepper motor
 A_UP = True
 A_DOWN = False
 A_SPEED = .00001
+A_TRAVEL_LENGTH_STEPS = 10000 # arbitrary right now
+a_position = 0 # global for a axis position tracking
 
 # global data collection
 plungeTime = []
@@ -132,7 +135,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # will need another tab if alternative settings are desired in one GUI
         # will need another tab if alternative settings are desired in one GUI
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
+        self.tab2 = self.ABox()
         self.tabs.addTab(self.tab1, 'Plunge')
+        self.tabs.addTab(self.tab2, 'A Axis')
 
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
@@ -598,6 +603,261 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
     # endregion nudgeBox_and_func
 
+    # region A_axis
+
+    # function: ABox
+    # purpose: creates middle GUI for A axis control
+    # parameters: self
+    # return: GroupBox
+    def ABox(self):
+        groupBox = QGroupBox("Nudge")  # create GroupBox to hold QWidgets
+
+        # create button to initiate nudge: this button will set device enable states and disable home/plunge buttons
+        self.A_start = QPushButton(self)
+        self.A_start.setFixedSize(300, 300)
+        self.A_start.setFont(QFont('Munhwa Gothic', 40))
+        self.A_start.setText("A AXIS")
+        self.A_start.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #4682B4; border-radius : 15px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #0F52BA; border-radius : 15px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        self.A_home = QPushButton(self)
+        self.A_home.setFixedSize(300, 300)
+        self.A_home.setFont(QFont('Munhwa Gothic', 40))
+        self.A_home.setText("A HOME")
+        self.A_home.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #4682B4; border-radius : 15px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #0F52BA; border-radius : 15px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
+
+        # create button to nudge upwards
+        self.A_up = QPushButton(self)
+        self.A_up.setFixedSize(300, 100)
+        self.A_up.setFont(QFont('Calibri', 30))
+        self.A_up.setText("↑")
+        self.A_up.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to stop nudge process to enable plunge/home capabilities
+        self.A_stop = QPushButton(self)
+        self.A_stop.setFixedSize(300, 100)
+        self.A_stop.setFont(QFont('Munhwa Gothic', 30))
+        self.A_stop.setText("STOP")
+        self.A_stop.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #AA4A44; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #803833; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to nudge downwards
+        self.A_down = QPushButton(self)
+        self.A_down.setFixedSize(300, 100)
+        self.A_down.setFont(QFont('Calibri', 30))
+        self.A_down.setText("↓")
+        self.A_down.setStyleSheet('QPushButton{color: white}')
+        self.A_down.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create label to indicate where to input nudge distance
+        self.A_spin_label = QLabel(self)
+        self.A_spin_label.setText("Set nudge distance")
+        self.A_spin_label.setFont(QFont('Munhwa Gothic', 20))
+
+        # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
+        self.A_spinbox = QDoubleSpinBox(self)
+        self.A_spinbox.setMaximum(2000)  # max nudge value
+        self.A_spinbox.setMinimum(1)  # min nudge value
+        self.A_spinbox.setValue(200)  # default value
+        self.A_spinbox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        #self.A_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.A_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.A_spinbox.setStyleSheet('''
+                            QSpinBox::down-button{width: 400px}
+                            QSpinBox::up-button{width: 400px}
+                            ''')
+
+        # create a label holding the positional data
+        self.A_pos_label = QLabel(self)
+        # note: this method of setting distance should be modified. takes a manually derived pos_home position
+        # value which indicates home, then subtracts it from the current position read by the encoder
+        self.A_pos_label.setText("Home to initialize position collection.")  # If inaccurate, home,
+        # press E-STOP, unpress, then restart program.
+        self.A_pos_label.setMaximumSize(300, 100)
+        self.A_pos_label.setFont(QFont('Munhwa Gothic', 20))
+        self.A_pos_label.setWordWrap(True)
+
+        # connect buttons to associated functions
+        # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
+        self.A_start.clicked.connect(self.A_start_func)
+        self.A_up.pressed.connect(self.A_up_func)
+        self.A_stop.clicked.connect(self.A_stop_func)
+        self.A_down.pressed.connect(self.A_down_func)
+        self.A_home.clicked.connect(self.A_home_func)
+
+        # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
+        # and be able to read if button is help (checkable status)
+        self.A_up.setAutoRepeat(True)
+        self.A_up.setEnabled(False)
+        self.A_up.setCheckable(True)
+        self.A_down.setAutoRepeat(True)
+        self.A_down.setEnabled(False)
+        self.A_down.setCheckable(True)
+        self.A_stop.setEnabled(False)
+
+        # create vertical box layout
+        vbox = QGridLayout()
+        # add widgets to the box
+        vbox.addWidget(self.A_start, 0, 0)
+        vbox.addWidget(self.A_up, 1, 0)
+        vbox.addWidget(self.A_stop, 2, 0)
+        vbox.addWidget(self.A_down, 3, 0)
+        vbox.addWidget(self.A_spin_label, 4, 0)
+        vbox.addWidget(self.A_spinbox, 5, 0)
+        vbox.addWidget(self.A_pos_label, 6, 0)
+        vbox.addWidget(self.A_home, 0, 1)
+
+        # set alignment flags
+        vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        # set spacing between widgets
+        vbox.setSpacing(20)
+        groupBox.setLayout(vbox)  # set layout for groupBox
+        return groupBox
+
+    # function: nudgeBegin
+    # purpose: initializes the device to receive nudge inputs via the buttons & disables plunge functionality
+    # parameters: self
+    # return: none
+    def A_start_func(self):
+        ni_set('A_en', True)
+        # ni_set('light', True)  # turn on light to indicate movement stage
+        # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons
+        self.homeButton.setEnabled(False)
+        self.plungeButton.setEnabled(False)
+        self.startNudge.setEnabled(False)
+        self.A_home.setEnabled(True)
+        self.A_up.setEnabled(True)
+        self.A_stop.setEnabled(True)
+        self.A_down.setEnabled(True)
+
+        # enable device - this will hold the device where it is, but can also be hard on the motor
+        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
+
+    # function: A_up_func
+    # purpose: nudges the carriage up
+    # parameters: self
+    # return: none
+    def A_up_func(self):
+        global a_position
+        new_pos = a_position + int(self.A_spinbox.value())
+        if a_position <= A_TRAVEL_LENGTH_STEPS:
+            A_move(A_UP, int(self.A_spinbox.value()))
+            a_position = new_pos
+            self.current_pos_label.setText("%4.2f cm" % (new_pos))  # update position label
+
+
+    # function: A_stop_func
+    # purpose: stops nudge function
+    # parameters: self
+    # return: none
+    def A_stop_func(self):
+        ni_set('A_en', False)
+
+        # reset settings to enable plunging and disable A axis
+        self.startNudge.setEnabled(True)
+        self.homeButton.setEnabled(True)
+        self.plungeButton.setEnabled(True)
+        self.upNudge.setEnabled(False)
+        self.stopButton.setEnabled(False)
+        self.downNudge.setEnabled(False)
+
+
+    # function: downNudgeFunc
+    # purpose: nudges the carriage down
+    # parameters: self
+    # return: none
+    def A_down_func(self):
+        global a_position
+        new_pos = a_position - int(self.A_spinbox.value())
+        if a_position >= 0:
+            A_move(A_DOWN, int(self.A_spinbox.value()))
+            a_position = new_pos
+            self.current_pos_label.setText("%4.2f cm" % (new_pos))  # update position label
+
+    def A_home_func(self):
+        global a_position
+        ni_set('A_dir', A_DOWN)
+        step_task = nidaqmx.Task()
+        step_task.do_channels.add_do_chan(PINOUT['A_step'])
+        step_task.start()
+        home_task = nidaqmx.Task()
+        home_task.di_channels.add_di_chan(PINOUT['A_home'])
+        home_task.start()
+        while True:
+            step_task.write(True)
+            time.sleep(A_SPEED)
+            step_task.write(False)
+            time.sleep(A_SPEED)
+            if home_task.read():
+                break
+        a_position = 0
+        self.current_pos_label.setText(position)
+
+        home_task.stop()
+        step_task.stop()
+
+
+    # endregion nudgeBox_and_func
+
+
     # region setup_funcs
 
     # function: setupBox
@@ -941,6 +1201,8 @@ NI INSTRUMENT COMMUNICATION COMMANDS - HEATER, GAS EXCHANGE, LIGHT
 def ni_set(device, value):
     with nidaqmx.Task() as task:
         task.do_channels.add_do_chan(PINOUT[device])
+        task.start()
+        print(PINOUT[device] + " set to " + str(value))
         task.write(value)
         task.stop()
 
@@ -948,6 +1210,7 @@ def A_move(dir, steps):
     ni_set('A_dir', dir)
     with nidaqmx.Task() as step_task:
         step_task.do_channels.add_do_chan(PINOUT['A_step'])
+        step_task.start()
         for i in range(steps):
             step_task.write(True)
             time.sleep(A_SPEED)
@@ -1157,34 +1420,6 @@ def move_nudge(direction, nudge_step):
         passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, nudge, True, True,
                                            byref(pErrorCode))  # move to position
 
-
-def move_home_sensor():
-    time.sleep(5)
-    epos.VCS_FindHome(keyHandle, nodeID, 7, byref(pErrorCode))
-
-
-# function: move_general
-# purpose: moves the carriage to a specified position
-# parameters: int, int
-# return: none
-def move_general(target_position, target_speed):
-    global pos_home_raw
-    target_position = pos_home_raw - target_position
-    print(target_position)
-
-    while True:
-        if target_speed != 0:
-            passProf = epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration,
-                                                   byref(pErrorCode))  # set profile parameters
-            passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, target_position, True, True,
-                                               byref(pErrorCode))  # move to position
-
-        elif target_speed == 0:
-            epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-        true_position = get_position()
-        print(true_position)
-        if round(true_position, -2) <= target_position:
-            break
 
 
 # function: get_error
