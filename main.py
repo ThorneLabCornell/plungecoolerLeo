@@ -61,7 +61,8 @@ PINOUT = { # too lazy to implement and enum right now
     'A_step':               DEVICE_NAME + "/port2/line4",
     'A_dir':                DEVICE_NAME + "/port2/line1",
     'A_en':                 DEVICE_NAME + "/port2/line6",
-    'A_home':               DEVICE_NAME + "/port2/line0"
+    'A_home':               DEVICE_NAME + "/port2/line0",
+    'A_motor_power':        DEVICE_NAME + "/port0/line5"
 }
 
 # constants for A stepper motor
@@ -259,14 +260,25 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             global position
 
             homing_speed = 1000
-            ni_set('light', True) # moving
-            epos.VCS_SethomingParameter(keyHandle, nodeID, 1000, homing_speed, homing_speed, 0, 0, 0, byref(pErrorCode))
-            epos.VCS_FindHome(keyHandle, nodeID, 27, byref(pErrorCode))
-            epos.VCS_WaitForHomingAttained(keyHandle, nodeID, 3000, byref(pErrorCode))
+            ni_set('brake', True)
+            ni_set('light', True)
+            epos.VCS_SetHomingParameter(keyHandle, nodeID, 500, 500, 500, 0, 0, 0, byref(pErrorCode))
+            epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
+            epos.VCS_FindHome(keyHandle, nodeID, 23, byref(pErrorCode))
+
+            pCurrent = c_short()
+            time.sleep(.1)
+            while True:
+                epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
+                print(pCurrent.value)
+                if pCurrent.value <= 300: #not mving, hit switch
+                    break
+            ni_set('light', False)
+            ni_set('brake', False)
+            epos.VCS_DefinePosition(keyHandle, nodeID, c_long(0), byref(pErrorCode))
+
             clear_errors(keyHandle)  # in case of fault, reset so it works
-            ni_set('light', False)  # done moving
-            position = travel_length_pulses
-            self.current_pos_label.setText(position)
+            self.current_pos_label.setText(str(get_position()))
 
         else:
             global pos_home_raw
@@ -515,10 +527,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
-        self.upNudge.setAutoRepeat(True)
+        #self.upNudge.setAutoRepeat(True)
         self.upNudge.setEnabled(False)
         self.upNudge.setCheckable(True)
-        self.downNudge.setAutoRepeat(True)
+        #self.downNudge.setAutoRepeat(True)
         self.downNudge.setEnabled(False)
         self.downNudge.setCheckable(True)
 
@@ -563,12 +575,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def upNudgeFunc(self):
-        global pos_home_raw
-        epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
 
+        epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
+        print("upnudge")
         move_nudge("up", self.nudge_spinbox.value())  # call function to move by nudge distance
+
         value_n = (-1 * (get_position()-pos_home_raw) * leadscrew_inc / encoder_pulse_num) + self.nudge_spinbox.value() # approximate updated position
-        self.current_pos_label.setText("%4.2f cm" % (value_n))  # update label with position
+        self.current_pos_label.setText(str(get_position()))  # update position label
 
     # function: stopNudge
     # purpose: stops nudge function
@@ -577,6 +590,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def stopNudge(self):
         # reset settings to enable plunging and disable nudging
         ni_set('light', False)
+
+
         self.startNudge.setEnabled(True)
         self.homeButton.setEnabled(True)
         self.plungeButton.setEnabled(True)
@@ -592,14 +607,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def downNudgeFunc(self):
-        global pos_home_raw
         epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
         print(int(self.nudge_spinbox.value() / leadscrew_inc * encoder_pulse_num))
         move_nudge("down", self.nudge_spinbox.value())  # calculate nudge value from input & move
 
         value_n = (-1 * (get_position()-pos_home_raw) * leadscrew_inc / encoder_pulse_num) + self.nudge_spinbox.value()  # approximate updated position
 
-        self.current_pos_label.setText("%4.2f cm" % (value_n))  # update position label
+        self.current_pos_label.setText(str(get_position()))  # update position label
 
     # endregion nudgeBox_and_func
 
@@ -707,14 +721,50 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             }
                             ''')
 
+        self.A_move_to = QPushButton(self)
+        self.A_move_to.setFixedSize(300, 340)
+        self.A_move_to.setFont(QFont('Calibri', 30))
+        self.A_move_to.setText("Move To")
+        self.A_move_to.setStyleSheet('QPushButton{color: white}')
+        self.A_move_to.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+
         # create label to indicate where to input nudge distance
         self.A_spin_label = QLabel(self)
         self.A_spin_label.setText("Set nudge distance")
         self.A_spin_label.setFont(QFont('Munhwa Gothic', 20))
 
+        self.A_spin_label_2 = QLabel(self)
+        self.A_spin_label_2.setText("Set move to position")
+        self.A_spin_label_2.setFont(QFont('Munhwa Gothic', 20))
+
+        self.A_spinbox_2 = QDoubleSpinBox(self)
+        self.A_spinbox_2.setMaximum(A_TRAVEL_LENGTH_STEPS)  # max nudge value
+        self.A_spinbox_2.setMinimum(0)  # min nudge value
+        self.A_spinbox_2.setValue(200)  # default value
+        self.A_spinbox_2.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        # self.A_spinbox_2.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.A_spinbox_2.setFont(QFont('Munhwa Gothic', 40))
+        self.A_spinbox_2.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
+
         # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
         self.A_spinbox = QDoubleSpinBox(self)
-        self.A_spinbox.setMaximum(2000)  # max nudge value
+        self.A_spinbox.setMaximum(A_TRAVEL_LENGTH_STEPS)  # max nudge value
         self.A_spinbox.setMinimum(1)  # min nudge value
         self.A_spinbox.setValue(200)  # default value
         self.A_spinbox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
@@ -742,6 +792,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.A_stop.clicked.connect(self.A_stop_func)
         self.A_down.pressed.connect(self.A_down_func)
         self.A_home.clicked.connect(self.A_home_func)
+        self.A_move_to.clicked.connect(self.A_move_to_func)
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
@@ -752,6 +803,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.A_down.setEnabled(False)
         self.A_down.setCheckable(True)
         self.A_stop.setEnabled(False)
+        self.A_home.setEnabled(False)
+        self.A_move_to.setEnabled(False)
+
+
 
         # create vertical box layout
         vbox = QGridLayout()
@@ -762,8 +817,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.A_down, 3, 0)
         vbox.addWidget(self.A_spin_label, 4, 0)
         vbox.addWidget(self.A_spinbox, 5, 0)
-        vbox.addWidget(self.A_pos_label, 6, 0)
+
         vbox.addWidget(self.A_home, 0, 1)
+        vbox.addWidget(self.A_move_to, 1, 1, 3, 0)
+        vbox.addWidget(self.A_spin_label_2, 4, 1)
+        vbox.addWidget(self.A_spinbox_2, 5, 1)
+
+        vbox.addWidget(self.A_pos_label, 6, 0, 0, 2)
 
         # set alignment flags
         vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -780,13 +840,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         ni_set('A_en', True)
         # ni_set('light', True)  # turn on light to indicate movement stage
         # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons
-        self.homeButton.setEnabled(False)
-        self.plungeButton.setEnabled(False)
-        self.startNudge.setEnabled(False)
         self.A_home.setEnabled(True)
         self.A_up.setEnabled(True)
         self.A_stop.setEnabled(True)
         self.A_down.setEnabled(True)
+        self.A_move_to.setEnabled(True)
 
         # enable device - this will hold the device where it is, but can also be hard on the motor
         epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
@@ -801,7 +859,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         if a_position <= A_TRAVEL_LENGTH_STEPS:
             A_move(A_UP, int(self.A_spinbox.value()))
             a_position = new_pos
-            self.current_pos_label.setText("%4.2f cm" % (new_pos))  # update position label
+            self.current_pos_label.setText(str(new_pos))  # update position label
 
 
     # function: A_stop_func
@@ -810,14 +868,14 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # return: none
     def A_stop_func(self):
         ni_set('A_en', False)
+        ni_set('A_motor_power', False)
 
-        # reset settings to enable plunging and disable A axis
-        self.startNudge.setEnabled(True)
-        self.homeButton.setEnabled(True)
-        self.plungeButton.setEnabled(True)
-        self.upNudge.setEnabled(False)
-        self.stopButton.setEnabled(False)
-        self.downNudge.setEnabled(False)
+        self.A_up.setEnabled(False)
+        self.A_stop.setEnabled(False)
+        self.A_down.setEnabled(False)
+        self.A_home.setEnabled(False)
+        self.A_move_to.setEnabled(False)
+
 
 
     # function: downNudgeFunc
@@ -830,10 +888,12 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         if a_position >= 0:
             A_move(A_DOWN, int(self.A_spinbox.value()))
             a_position = new_pos
-            self.current_pos_label.setText("%4.2f cm" % (new_pos))  # update position label
+            self.A_pos_label.setText(str(new_pos))  # update position label
+
 
     def A_home_func(self):
         global a_position
+        ni_set('A_motor_power', True)
         ni_set('A_dir', A_DOWN)
         step_task = nidaqmx.Task()
         step_task.do_channels.add_do_chan(PINOUT['A_step'])
@@ -849,11 +909,20 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             if home_task.read():
                 break
         a_position = 0
-        self.current_pos_label.setText(position)
+        self.A_pos_label.setText(str(0))
 
         home_task.stop()
         step_task.stop()
+        ni_set('A_motor_power', False)
 
+
+    def A_move_to_func(self):
+        global a_position
+        to_pos = int(self.A_spinbox_2.value())
+        direction = A_UP if to_pos > a_position else A_DOWN
+        amount = abs(a_position - to_pos)
+        A_move(direction, amount)
+        a_position = to_pos
 
     # endregion nudgeBox_and_func
 
@@ -1202,11 +1271,13 @@ def ni_set(device, value):
     with nidaqmx.Task() as task:
         task.do_channels.add_do_chan(PINOUT[device])
         task.start()
-        print(PINOUT[device] + " set to " + str(value))
+        print(device + " set to " + str(value))
         task.write(value)
+        #time.sleep(.5)
         task.stop()
 
 def A_move(dir, steps):
+    ni_set('A_motor_power', True)
     ni_set('A_dir', dir)
     with nidaqmx.Task() as step_task:
         step_task.do_channels.add_do_chan(PINOUT['A_step'])
@@ -1217,7 +1288,7 @@ def A_move(dir, steps):
             step_task.write(False)
             time.sleep(A_SPEED)
         step_task.stop()
-
+    ni_set('A_motor_power', False)
 
 def read_temperature():
     # reads voltages into a global array
@@ -1285,14 +1356,14 @@ def move_plunge():
     if LEO_MODE:
         global position
         global PID_P, PID_I
-        stop_position = 5000
-        plunge_speed = 1000
-        plunge_timeout = 3000
+        stop_position = -15000
+        plunge_speed = -1000
+        plunge_timeout = 3
 
         ni_set('brake', True)  # false is braking
 
-        PID_P = 0
-        PID_I = 0
+        PID_P = 1
+        PID_I = 1
         epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))
         epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
         epos.VCS_SetVelocityMust(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
@@ -1300,12 +1371,15 @@ def move_plunge():
         while True:
 
             if get_position() <= stop_position:
-                epos.VCS_SetQuickstopState(keyHandle, nodeID, byref(pErrorCode))
-                ni_set('brake', False) # false is braking
+                epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+                break
             if timer() - start_time > plunge_timeout:
-                epos.VCS_SetQuickstopState(keyHandle, nodeID, byref(pErrorCode))
-
+                epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+                break
             print(get_position())
+
+        ni_set('brake', False)  # false is braking
+
 
     else:
         global homePosDataPrev
@@ -1378,7 +1452,7 @@ def move_home():
             passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, target_position, True, True,
                                                byref(pErrorCode))  # move to position
 
-        elif target_speed == 0:
+        elif target_speed <= 300: # if its here it aint movin
             epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
             break
         pIsInFault = c_uint()
@@ -1401,24 +1475,24 @@ def clear_errors(key):
 # parameters: string, int
 # return: none
 def move_nudge(direction, nudge_step):
+    target_speed = 500
+    ni_set('brake', True)
     nudge_step = int(nudge_step / leadscrew_inc * encoder_pulse_num)
     epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
-    target_speed = 500
-    if direction == "up":
-        nudge = nudge_step
-    else:  # downward movement
-        nudge = nudge_step * -1
-    nudge = nudge + abs(get_position())
 
-    if target_speed != 0:
-        if nudge > pos_home_raw:
-            nudge = pos_home_raw
-        if nudge <= 0:
-             nudge = 0
-        passProf = epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration,
-                                               byref(pErrorCode))  # set profile parameters
-        passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, nudge, True, True,
-                                           byref(pErrorCode))  # move to position
+    if direction == "down":
+        nudge_step *= -1
+
+    nudge_step = nudge_step + get_position()
+
+    # TODO: MAKE SURE IT DOESNT GO OUT OF BOUNDS
+
+    print("at: " + str(get_position()) + "; moving to: " + str(nudge_step))
+    epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration, byref(pErrorCode))  # set profile parameters
+    epos.VCS_MoveToPosition(keyHandle, nodeID, nudge_step, True, True, byref(pErrorCode))  # move to position
+    time.sleep(.5)
+
+    ni_set('brake', False)
 
 
 
