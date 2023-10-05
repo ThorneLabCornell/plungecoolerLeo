@@ -3,9 +3,12 @@ AUTHOR: KASHFIA (ASH) MAHMOOD
 DATE: 06/14/2023
 ACKNOWLEDGEMENTS: John Allen Indergaard for his sacrifices & Matt for his GUI praise
 """
+import datetime
 # import all necessary libraries
 # region imports_and_constants
 
+import numpy as np
+import matplotlib.pyplot as plt
 import os
 import sys
 import time
@@ -62,7 +65,8 @@ PINOUT = { # too lazy to implement and enum right now
     'A_dir':                DEVICE_NAME + "/port2/line1",
     'A_en':                 DEVICE_NAME + "/port2/line6",
     'A_home':               DEVICE_NAME + "/port2/line0",
-    'A_motor_power':        DEVICE_NAME + "/port0/line5"
+    'A_motor_power':        DEVICE_NAME + "/port0/line5",
+    'thermocouple':         DEVICE_NAME + "/ai6"
 }
 
 # constants for A stepper motor
@@ -82,7 +86,11 @@ leadscrew_inc = 1.2
 encoder_pulse_num = 512 * 4
 
 travel_length_pulses = 30000 # number of encoder pulses from top position to bottom position
-position = 0 # global position tracking
+
+HOMING_SPEED = 1000
+HOMING_ACCELERATION = 5000
+
+plunge_done_flag = False
 
 prevPosData = 0
 homePosDataPrev = 0
@@ -137,9 +145,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # will need another tab if alternative settings are desired in one GUI
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
+        self.tab3 = self.controlBox()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
-
+        self.tabs.addTab(self.tab3, "Control Panel")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
     # function: plunge_options
@@ -256,53 +265,37 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def homeBegin(self):
+#        move_nudge('down', 10)
         if LEO_MODE:
-            global position
+            pCurrent = c_short()
 
-            homing_speed = 1000
+            epos.VCS_SetHomingParameter(keyHandle, nodeID, HOMING_ACCELERATION, HOMING_SPEED, HOMING_SPEED, 0, 0, 0, byref(pErrorCode))
+            epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
             ni_set('brake', True)
             ni_set('light', True)
-            epos.VCS_SetHomingParameter(keyHandle, nodeID, 500, 500, 500, 0, 0, 0, byref(pErrorCode))
-            epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
             epos.VCS_FindHome(keyHandle, nodeID, 23, byref(pErrorCode))
 
-            pCurrent = c_short()
-            time.sleep(.1)
+            time.sleep(.2) # shot delay to let motor get up to speed
             while True:
                 epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
-                print(pCurrent.value)
-                if pCurrent.value <= 300: #not mving, hit switch
+                print("current: " + str(pCurrent.value))
+                if pCurrent.value <= 400: #not mving, hit switch
                     break
-            ni_set('light', False)
-            ni_set('brake', False)
             epos.VCS_DefinePosition(keyHandle, nodeID, c_long(0), byref(pErrorCode))
 
             clear_errors(keyHandle)  # in case of fault, reset so it works
             self.current_pos_label.setText(str(get_position()))
+            print(str(get_position()))
 
-        else:
-            global pos_home_raw
-            ni_set('light', True)  # turn on the light to signify movement
-            homePosData = 0
-            clear_errors(keyHandle)  # after movement faults, reset by re-initializing device
-            if (self.tabs.currentIndex()) == 0:
-                epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
-                epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
-                move_home()  # start movement
-                clear_errors(keyHandle)  # after movement faults, reset by re-initializing device
-            ni_set('light', False)  # turn light off to signify no movement
-            home = 0  # manually set home position to be 0
-            # print(get_position())  # print to console the actual current reading of position
-            pos_home = (get_position() - pos_home_raw) * leadscrew_inc / encoder_pulse_num
-            self.current_pos_label.setText("%4.2f cm" % pos_home)
+            ni_set('light', False)
+            ni_set('brake', False)
 
     # function: plungeBegin
     # purpose: runs the plunge cooler down at 19000 rpm (2 m/s) until the device faults and hits the hard stop
     # parameters: self
     # return: none
     def plungeBegin(self):
-        homePosDataPrev = 0
-        global pos_home_raw
+
         ni_set('light', True)  # turn light on to show movement
         plungeData.clear()  # clear any previously collected data
         plungeTime.clear()
@@ -926,7 +919,37 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
     # endregion nudgeBox_and_func
 
+    # region control_panel
+    def controlBox(self):
+        groupBox = QGroupBox("Controls")  # create a GroupBox
 
+        self.brakeButton = QCheckBox(self)
+        self.brakeButton.setText("BRAKE TOGGLE")
+        self.brakeButton.setFont(QFont('Munhwa Gothic', 30))
+        self.brakeButton.setStyleSheet("QCheckBox::indicator"
+                                   "{"
+                                   "width : 70px;"
+                                   "height : 70px;"
+                                   "}")
+
+        self.brakeButton.stateChanged.connect(self.brakeFunc)
+
+        vbox = QVBoxLayout()
+
+        vbox.addWidget(self.brakeButton)
+
+        # set alignment, spacing, and assign layout to groupBox
+        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+        vbox.setSpacing(10)
+        groupBox.setLayout(vbox)
+        return groupBox
+
+
+    def brakeFunc(self):
+        ni_set('brake', self.brakeButton.isChecked())
+
+
+    # endregion control_panel
     # region setup_funcs
 
     # function: setupBox
@@ -977,9 +1000,6 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.h_power.setEnabled(True)
         self.vac.setEnabled(True)
 
-        self.tempButton = QPushButton(self)
-        self.tempButton.setText("Take Temperature Measurement")
-        self.tempButton.pressed.connect(self.collect_temp_profile)
 
         # create graph widget to read temperature; updates in plunge stage
         self.graphTempPos = pg.PlotWidget(self)
@@ -992,14 +1012,14 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         self.clear_temp_button = QPushButton(self)
         self.clear_temp_button.setText("Clear Temperature Measurements")
-        self.clear_temp_button.pressed.connect(self.clear_temp)
+        self.clear_temp_button.pressed.connect(getT)
 
         # add widgets to vertical box layout
         vbox = QVBoxLayout()
         vbox.addWidget(self.h_controller_check)
         vbox.addWidget(self.h_power)
         vbox.addWidget(self.vac)
-        vbox.addWidget(self.tempButton)
+
         vbox.addWidget(self.graphTempPos)
         vbox.addWidget(self.clear_temp_button)
 
@@ -1014,6 +1034,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         plungeTemp.clear()
         plunge_temp_time.clear()
 
+
     def collect_temp_profile(self):
         self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
         styles = {"color": "white", "font-size": "10px"}
@@ -1027,14 +1048,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         testPos = []
         value_n = (-1 * (get_position() * leadscrew_inc / encoder_pulse_num)) + self.nudge_spinbox.value()  # approximate updated position
         x = 0
-        while (x < 20):
+        while (x < 200):
             read_temperature()
             testSet.append(val)
-            testPos.append(value_n)
+            testPos.append(timer())
             x = x + 1
-            value_n = (-1 * (
-                    get_position() * leadscrew_inc / encoder_pulse_num)) + self.nudge_spinbox.value()  # approximate updated position
-
+            value_n = (-1 * ( get_position() * leadscrew_inc / encoder_pulse_num)) + self.nudge_spinbox.value()  # approximate updated position
+        print(testSet)
         move_nudge("down", self.nudge_spinbox.value())  # calculate nudge value from input & move
         value_n = (-1 * (
                 get_position() * leadscrew_inc / encoder_pulse_num)) + self.nudge_spinbox.value()  # approximate updated position
@@ -1296,6 +1316,7 @@ def read_temperature():
         sampling_rate = 2000000  # can alter sampling rate for quicker time points depending on DAQ max reads
         try:
             tempTask.ai_channels.add_ai_voltage_chan(PINOUT['temperature'])
+            # sets sample rate, clock source "" sets to internal clock
             tempTask.timing.cfg_samp_clk_timing(sampling_rate, source="", active_edge=nidaqmx.constants.Edge.RISING)
             global val
             val = tempTask.read()
@@ -1336,17 +1357,38 @@ def get_velocity():
     return pVelocityIs.value  # motor steps
 
 
+
+
 def dataLogThread():
     startTime = timer()
+    global plunge_done_flag
+    plunge_done_flag = False
+    i=0
     while True:
         # record data
         true_velocity = get_velocity()
         true_posCM = get_position()
         plungeTime.append(timer() - startTime)
+        #plungeData.append(-1*true_velocity)
         plungeData.append((-1) * true_velocity * leadscrew_inc / 100 / 60)
-        plungePosData.append((-1 * ((get_position() - pos_home_raw) * leadscrew_inc / encoder_pulse_num)))
+        plungePosData.append((-1 * (true_posCM * leadscrew_inc / encoder_pulse_num)))
+        if plunge_done_flag:
+            i += 1
+            if i == 50: #COLLECT EXTRA POINTS TO CAPPOUTRE DECELERATION
+                break
+
+    print("writing data to file")
+    filename = "C:\\Users\\ret-admin\\Desktop\\plunge_data\\plunge\\"
+    filename += datetime.datetime.now().strftime("%m-%d-%Y.%H-%M-%S")
+    f = open(filename + '.txt', 'w')
+    for i in range(len(plungeTime)):
+        f.write(str(plungeTime[i]) + ',' + str(plungePosData[i]) + ',' +  str(plungeData[i]) + '\n')
+    f.close()
 
 
+def printThread():
+    while not plunge_done_flag:
+        print(get_position())
 
 # function: move_plunge
 # purpose: plunges the carriage downwards rapidly (can set speed and "position"; set to large -ve if plunging full
@@ -1354,115 +1396,75 @@ def dataLogThread():
 # return: none
 def move_plunge():
     if LEO_MODE:
-        global position
         global PID_P, PID_I
-        stop_position = -15000
-        plunge_speed = -1000
+        global plunge_done_flag
+        stop_position = -26000
+        plunge_speed = -15000
         plunge_timeout = 3
 
         ni_set('brake', True)  # false is braking
-
-        PID_P = 1
-        PID_I = 1
+        logT = threading.Thread(target=dataLogThread)
+        logT.start()
+        #printT = threading.Thread(target=printThread)
+        #printT.start()
+        tempT = threading.Thread(target=tempLog)
+        tempT.start()
+        PID_P = 100000
+        PID_I = 10
         epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))
-        epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
-        epos.VCS_SetVelocityMust(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
+#        epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
+#        epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
+#        epos.VCS_SetVelocityMust(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
+
+        epos.VCS_ActivateProfileVelocityMode(keyHandle, nodeID, byref(pErrorCode))
+        epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
+        epos.VCS_MoveWithVelocity(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
         start_time = timer()
         while True:
-
             if get_position() <= stop_position:
-                epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
                 break
-            if timer() - start_time > plunge_timeout:
-                epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
-                break
-            print(get_position())
 
         ni_set('brake', False)  # false is braking
+        epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+
+        plunge_done_flag = True
+        logT.join()
+        print("regained log thread")
+        # printT.join()
+        # print("regained print thread")
 
 
-    else:
-        global homePosDataPrev
-        global pos_home_raw
-        true_position = get_position()
-        target_position = 1300
-        if round(abs(true_position), -2) == round(pos_home_raw, -2):
-            target_position = 1300  # 1300 is lowest without p-p-p from home
+def getT():
+    logT = threading.Thread(target=tempLog, args=(1, 100))
+    logT.start()
+    logT.join()
+
+
+# captures the next 5 seconds of temp data
+def tempLog(sample_seconds=5, sampling_rate=20000, log=True):
+    with nidaqmx.Task() as tempTask:
+        num_samples = sampling_rate * sample_seconds
+        tempTask.ai_channels.add_ai_voltage_chan(PINOUT['thermocouple'])
+        # sets sample rate, clock source "" sets to internal clock
+        tempTask.timing.cfg_samp_clk_timing(sampling_rate, source="", active_edge=nidaqmx.constants.Edge.RISING,
+                                            sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
+                                            samps_per_chan=num_samples)
+
+        print("done collecting T")
+        temps = tempTask.read(number_of_samples_per_channel=num_samples)
+        if log:
+            filename = "C:\\Users\\ret-admin\\Desktop\\plunge_data\\temp\\"
+            filename += datetime.datetime.now().strftime("%m-%d-%Y.%H-%M-%S")
+            f = open(filename + '.txt', 'w')
+            for temp in temps:
+                f.write(str(temp) + '\n')
+            f.close()
         else:
-            target_position = int(target_position - 300 * (get_position() - pos_home_raw) * leadscrew_inc / encoder_pulse_num)
-        print (target_position)
-        target_speed = 9500
-        startTime = timer()
-        epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
-        # while true, keep attempting to plunge - while loop may not be needed, as it is usually desired for precision
-
-        while True:
-            if target_speed != 0:
-                # set profile & begin move
-                passProf = epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration,
-                                                       byref(pErrorCode))  # set profile parameters
-                passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, target_position, True, True,
-                                                   byref(pErrorCode))  # move to position
-
-            elif target_speed == 0:  # stop movement
-                epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-
-            # record data
-            true_velocity = get_velocity()
-            true_posCM = get_position()
-            plungeTime.append(timer() - startTime)
-            plungeData.append((-1) * true_velocity * leadscrew_inc / 100 / 60)
-            plungePosData.append((-1 * ((get_position() - pos_home_raw) * leadscrew_inc / encoder_pulse_num)))
-
-            # lock = threading.Lock()
-            # lock.acquire()
-            # tempthread = threading.Thread(target=read_temperature, args=())
-            # tempthread.start()
-            # # tempthread.join()
-
-            pIsInFault = c_uint()
-            temp0 = epos.VCS_GetFaultState(keyHandle, nodeID, byref(pIsInFault), byref(pErrorCode))
-            if pIsInFault.value != 0:  # timeout/break options
-                epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-                break
-            true_position = get_position()
-            if round(abs(true_position - target_position), -2) < 100 or timer() - startTime > 0.5:
-                epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-                break
-
-            homePosDataPrev = get_position()
+            print(sum(temps) / len(temps))
+        print("regained temperature thread")
+        tempTask.stop()
 
 
-# function: move_home
-# purpose: move carriage upwards until faults
-# parameters: none
-# return: none
-def move_home():
-    global homePosDataPrev
-    global pos_home_raw
-    target_position = pos_home_raw
-    target_speed = 500
-    startTime = timer()
-    epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
-    while True:
-        print(get_position())
-        if target_speed != 0 and pos_home_raw != get_position():
-            passProf = epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration,
-                                                   byref(pErrorCode))  # set profile parameters
-            passMove = epos.VCS_MoveToPosition(keyHandle, nodeID, target_position, True, True,
-                                               byref(pErrorCode))  # move to position
-
-        elif target_speed <= 300: # if its here it aint movin
-            epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-            break
-        pIsInFault = c_uint()
-        temp0 = epos.VCS_GetFaultState(keyHandle, nodeID, byref(pIsInFault), byref(pErrorCode))
-
-        if 4 > abs(get_position() - homePosDataPrev) >= 0 and (abs(target_position - get_position()) < 200):
-            epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))  # halt motor
-            pos_home_raw = get_position()
-            break
-        homePosDataPrev = get_position()
 
 
 def clear_errors(key):
@@ -1475,7 +1477,7 @@ def clear_errors(key):
 # parameters: string, int
 # return: none
 def move_nudge(direction, nudge_step):
-    target_speed = 500
+    target_speed = 600
     ni_set('brake', True)
     nudge_step = int(nudge_step / leadscrew_inc * encoder_pulse_num)
     epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
