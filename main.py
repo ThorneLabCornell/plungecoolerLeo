@@ -49,7 +49,7 @@ EPOS_TIMEOUT = 500
 
 # Configure desired motion profile
 # acceleration should be 2g: 2*9.81m/s^2 -> 190 000
-acceleration = 80000  # rpm/s, up to 1e7 would be possible, 98 100 is 2g
+acceleration = 10000000  # rpm/s, up to 1e7 would be possible, 98 100 is 2g
 deceleration = 10000000  # rpm/s
 
 # NI DAQ configuration and pinout
@@ -72,8 +72,8 @@ PINOUT = { # too lazy to implement and enum right now
 # constants for A stepper motor
 A_UP = True
 A_DOWN = False
-A_SPEED = .00001
-A_TRAVEL_LENGTH_STEPS = 10000 # arbitrary right now
+A_SPEED = .001
+A_TRAVEL_LENGTH_STEPS = 100000 # arbitrary right now
 a_position = 0 # global for a axis position tracking
 
 # global data collection
@@ -81,6 +81,7 @@ plungeTime = []
 plungeData = []
 plungeTemp = []
 plungePosData = []
+current_probe_temp = 0
 
 leadscrew_inc = 1.2
 encoder_pulse_num = 512 * 4
@@ -266,6 +267,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # return: none
     def homeBegin(self):
 #        move_nudge('down', 10)
+
         if LEO_MODE:
             pCurrent = c_short()
 
@@ -295,7 +297,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def plungeBegin(self):
-
+        if abs(int(self.current_pos_label.text())) > 15:
+            return
         ni_set('light', True)  # turn light on to show movement
         plungeData.clear()  # clear any previously collected data
         plungeTime.clear()
@@ -322,7 +325,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                 self.plungevac.setEnabled(False)  # any conflicting settings are off or set settings are kept constant
                 wait_time = self.vac_on_time.value()  # read time to wait; turns on vacuum and pauses before plunge
                 start = timer()
-                ni_set('vacuum', True)  # turn on vacuum
+                ni_set('vacuum', False)  # turn on vacuum
                 while True:  # hold loop until time is reached, then plunge
                     if timer() - start >= wait_time - pp_wait_time:
                         break
@@ -332,20 +335,20 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             move_nudge('down', self.plungepausedist.value())  # move to the distance
 
             if self.plungevac.isChecked() and self.vac_on_time.value() == pp_wait_time:
-                ni_set('vacuum', True)
+                ni_set('vacuum', False)
             pptimer = timer()  # start timer for plunge pause plunge
 
             vac_on = False
             while True:  # hold in loop until pause time has been reached, then proceed to plunging stage
                 if self.plungevac.isChecked() and ~vac_on and self.vac_on_time.value() < pp_wait_time and (
                         timer() - pptimer > self.vac_on_time.value()):
-                    ni_set('vacuum', True)
+                    ni_set('vacuum', False)
                     vac_on = True
                 if timer() - pptimer > pp_wait_time:
                     break
 
             move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
-            ni_set('vacuum', False)
+            ni_set('vacuum', True)
 
         elif self.plungevac.isChecked():  # vacuum time; note that this does not add to the p-p-p time
             self.vac_on_time.setEnabled(False)
@@ -849,7 +852,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def A_up_func(self):
         global a_position
         new_pos = a_position + int(self.A_spinbox.value())
-        if a_position <= A_TRAVEL_LENGTH_STEPS:
+        if new_pos <= A_TRAVEL_LENGTH_STEPS:
             A_move(A_UP, int(self.A_spinbox.value()))
             a_position = new_pos
             self.current_pos_label.setText(str(new_pos))  # update position label
@@ -878,7 +881,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def A_down_func(self):
         global a_position
         new_pos = a_position - int(self.A_spinbox.value())
-        if a_position >= 0:
+        if new_pos >= 0:
             A_move(A_DOWN, int(self.A_spinbox.value()))
             a_position = new_pos
             self.A_pos_label.setText(str(new_pos))  # update position label
@@ -1010,9 +1013,26 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.graphTempPos.setLabel("bottom", "Position (cm)", **styles)
         self.graphTempPos.showGrid(x=True, y=True)
 
-        self.clear_temp_button = QPushButton(self)
-        self.clear_temp_button.setText("Clear Temperature Measurements")
-        self.clear_temp_button.pressed.connect(getT)
+        self.temp_h_box = QHBoxLayout()
+
+        self.instant_temp_button = QPushButton(self)
+        self.instant_temp_button.setText("🤒")
+        self.instant_temp_button.pressed.connect(self.getT)
+        self.temp_h_box.addWidget(self.instant_temp_button)
+
+        self.instant_temp_label = QLabel("")
+        self.instant_temp_label.setText("Read Temperature")
+        self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
+        self.temp_h_box.addWidget(self.instant_temp_label)
+
+        self.profile_temp_button = QPushButton(self)
+        self.profile_temp_button.setText("🤒📈")
+        self.profile_temp_button.pressed.connect(self.collect_temp_profile)
+        self.temp_h_box.addWidget(self.profile_temp_button)
+
+        self.temp_h_group_box = QGroupBox()
+        self.temp_h_group_box.setLayout(self.temp_h_box)
+
 
         # add widgets to vertical box layout
         vbox = QVBoxLayout()
@@ -1021,7 +1041,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.vac)
 
         vbox.addWidget(self.graphTempPos)
-        vbox.addWidget(self.clear_temp_button)
+        vbox.addWidget(self.temp_h_group_box)
 
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -1029,13 +1049,19 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         groupBox.setLayout(vbox)
         return groupBox
 
-    def clear_temp(self):
+    def getT(self):
+        logT = threading.Thread(target=tempLog, args=(1, 100, False))
+        logT.start()
+        logT.join()
+        global current_probe_temp
+        self.instant_temp_label.setText("%4.2f°C" % (current_probe_temp))
+
+
+    def collect_temp_profile(self):
         self.graphTempPos.clear()
         plungeTemp.clear()
         plunge_temp_time.clear()
 
-
-    def collect_temp_profile(self):
         self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
         styles = {"color": "white", "font-size": "10px"}
         self.graphTempPos.setLabel("left", "Voltage (V)", **styles)
@@ -1245,8 +1271,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
     def exitFunction(self):
         print("Force exiting application")
-        ni_set('vacuum',            False)
-        ni_set('heater',            False)
+        ni_set('vacuum',            True)
+        ni_set('heater',            True)
         ni_set('heater_controller', False)
         ni_set('light',             False)
         close_device(keyHandle)
@@ -1271,7 +1297,7 @@ def start_app():
     exitCode = app.exec()
 
     # when closed properly via x settings, reset all components that may have been on
-    ni_set('vacuum', False)
+    ni_set('vacuum', True)
     ni_set('heater', False)
     ni_set('heater_controller', False)
     ni_set('light', False)
@@ -1399,7 +1425,7 @@ def move_plunge():
         global PID_P, PID_I
         global plunge_done_flag
         stop_position = -26000
-        plunge_speed = -15000
+        plunge_speed = -10000
         plunge_timeout = 3
 
         ni_set('brake', True)  # false is braking
@@ -1409,7 +1435,7 @@ def move_plunge():
         #printT.start()
         tempT = threading.Thread(target=tempLog)
         tempT.start()
-        PID_P = 100000
+        PID_P = 10000
         PID_I = 10
         epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))
 #        epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
@@ -1434,10 +1460,7 @@ def move_plunge():
         # print("regained print thread")
 
 
-def getT():
-    logT = threading.Thread(target=tempLog, args=(1, 100))
-    logT.start()
-    logT.join()
+
 
 
 # captures the next 5 seconds of temp data
@@ -1460,7 +1483,8 @@ def tempLog(sample_seconds=5, sampling_rate=20000, log=True):
                 f.write(str(temp) + '\n')
             f.close()
         else:
-            print(sum(temps) / len(temps))
+            global current_probe_temp
+            current_probe_temp = (sum(temps) / len(temps))
         print("regained temperature thread")
         tempTask.stop()
 
@@ -1478,9 +1502,8 @@ def clear_errors(key):
 # return: none
 def move_nudge(direction, nudge_step):
     target_speed = 600
-    ni_set('brake', True)
+    pCurrent = c_short()
     nudge_step = int(nudge_step / leadscrew_inc * encoder_pulse_num)
-    epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
 
     if direction == "down":
         nudge_step *= -1
@@ -1490,10 +1513,18 @@ def move_nudge(direction, nudge_step):
     # TODO: MAKE SURE IT DOESNT GO OUT OF BOUNDS
 
     print("at: " + str(get_position()) + "; moving to: " + str(nudge_step))
+    epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
     epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration, byref(pErrorCode))  # set profile parameters
+    epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))
+    time.sleep(.1)
+    ni_set('brake', True)
     epos.VCS_MoveToPosition(keyHandle, nodeID, nudge_step, True, True, byref(pErrorCode))  # move to position
     time.sleep(.5)
-
+    #while True:
+    #    epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
+    #    print(pCurrent.value)
+    #    if pCurrent.value <= 400:  # not mving
+    #        break
     ni_set('brake', False)
 
 
@@ -1537,8 +1568,16 @@ def initialize_device(key):
     # if pIsInFault.value == 0:
     # print("Device is in fault state.")
 
-    epos.VCS_SetMaxFollowingError(key, nodeID, 5000, byref(pErrorCode))
+    epos.VCS_SetMaxFollowingError(key, nodeID, 2500, byref(pErrorCode))
     # move_home()
+    # a = c_long()
+    # b = c_long()
+    # c = c_long()
+    # epos.VCS_GetDcMotorParameter(keyHandle, nodeID, byref(a), byref(b), byref(c), byref(pErrorCode))
+
+    # print(str(a.value) + ", " + str(b.value) + ", " + str(c.value) + ", ")
+    epos.VCS_SetDcMotorParameter(keyHandle, nodeID, 6000, 10000, 48)
+
     return [p1, p2, p3, p4, p5]
 
 
