@@ -73,8 +73,10 @@ PINOUT = { # too lazy to implement and enum right now
 A_UP = True
 A_DOWN = False
 A_SPEED = .001
-A_TRAVEL_LENGTH_STEPS = 100000 # arbitrary right now
-a_position = 0 # global for a axis position tracking
+A_TRAVEL_LENGTH_STEPS = 10000000 # arbitrary right now
+a_position = 10000 # global for a axis position tracking
+
+readTemp_flag = False;
 
 # global data collection
 plungeTime = []
@@ -266,7 +268,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def homeBegin(self):
-#        move_nudge('down', 10)
+        move_nudge('up', 1)
 
         if LEO_MODE:
             pCurrent = c_short()
@@ -276,28 +278,36 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             ni_set('brake', True)
             ni_set('light', True)
             epos.VCS_FindHome(keyHandle, nodeID, 23, byref(pErrorCode))
-
-            time.sleep(.2) # shot delay to let motor get up to speed
+            startT = timer()
             while True:
                 epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
                 print("current: " + str(pCurrent.value))
-                if pCurrent.value <= 400: #not mving, hit switch
+                if pCurrent.value <= 400 and (timer()-startT > .05): #not mving, hit switch
                     break
-            epos.VCS_DefinePosition(keyHandle, nodeID, c_long(0), byref(pErrorCode))
+                if timer() - startT > 5:
+                    break
+            ni_set('brake', False)
+            ni_set('light', False)
 
+            startT = timer()
+            while True:
+                epos.VCS_DefinePosition(keyHandle, nodeID, c_long(0), byref(pErrorCode))
+                if abs(get_position()) < 50:
+                    break
+                if timer() - startT > 1:
+                    break
+                time.sleep(.1)
             clear_errors(keyHandle)  # in case of fault, reset so it works
             self.current_pos_label.setText(str(get_position()))
             print(str(get_position()))
 
-            ni_set('light', False)
-            ni_set('brake', False)
 
     # function: plungeBegin
     # purpose: runs the plunge cooler down at 19000 rpm (2 m/s) until the device faults and hits the hard stop
     # parameters: self
     # return: none
     def plungeBegin(self):
-        if abs(int(self.current_pos_label.text())) > 15:
+        if abs(int(self.current_pos_label.text())) > 50:
             return
         ni_set('light', True)  # turn light on to show movement
         plungeData.clear()  # clear any previously collected data
@@ -355,13 +365,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             self.plungevac.setEnabled(False)  # any conflicting settings are off or set settings are kept constant
             wait_time = self.vac_on_time.value()  # read time to wait; turns on vacuum and pauses before plunge
             start = timer()
-            ni_set('vacuum', True)  # turn on vacuum
+            ni_set('vacuum', False)  # turn on vacuum
             while True:  # hold loop until time is reached, then plunge
                 if timer() - start >= wait_time or timer() - pptimer >= wait_time:
                     epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
                     move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
                     break
-            ni_set('vacuum', False)  # turn off vacuum following plunge
+            ni_set('vacuum', True)  # turn off vacuum following plunge
             self.vac_on_time.setEnabled(True)  # return previous settings to enable changes
             self.plungevac.setEnabled(True)
 
@@ -463,6 +473,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             }
                             QPushButton:disabled {
                                 background-color: gray;
+                            }
                             }
                             ''')
 
@@ -792,10 +803,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
-        self.A_up.setAutoRepeat(True)
+        self.A_up.setAutoRepeat(False)
         self.A_up.setEnabled(False)
         self.A_up.setCheckable(True)
-        self.A_down.setAutoRepeat(True)
+        self.A_down.setAutoRepeat(False)
         self.A_down.setEnabled(False)
         self.A_down.setCheckable(True)
         self.A_stop.setEnabled(False)
@@ -934,12 +945,23 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                    "width : 70px;"
                                    "height : 70px;"
                                    "}")
-
         self.brakeButton.stateChanged.connect(self.brakeFunc)
+
+        self.tempButton = QCheckBox(self)
+        self.tempButton.setText("TEMP TOGGLE")
+        self.tempButton.setFont(QFont('Munhwa Gothic', 30))
+        self.tempButton.setStyleSheet("QCheckBox::indicator"
+                                   "{"
+                                   "width : 70px;"
+                                   "height : 70px;"
+                                   "}")
+        self.tempButton.stateChanged.connect(self.tempToggle)
+
 
         vbox = QVBoxLayout()
 
         vbox.addWidget(self.brakeButton)
+        vbox.addWidget(self.tempButton)
 
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -951,6 +973,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def brakeFunc(self):
         ni_set('brake', self.brakeButton.isChecked())
 
+    def tempToggle(self):
+        global readTemp_flag
+        readTemp_flag = self.tempButton.isChecked()
 
     # endregion control_panel
     # region setup_funcs
@@ -1111,7 +1136,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def guivacuum(self):
-        ni_set('vacuum', self.vac.isChecked())
+        ni_set('vacuum',  (not self.vac.isChecked()))
 
     # function: plungevac_on
     # purpose: enables or disables spinbox input into time input; enables or disables continuous vacuum
@@ -1298,7 +1323,7 @@ def start_app():
 
     # when closed properly via x settings, reset all components that may have been on
     ni_set('vacuum', True)
-    ni_set('heater', False)
+    ni_set('heater', True)
     ni_set('heater_controller', False)
     ni_set('light', False)
     close_device(keyHandle)
@@ -1424,8 +1449,8 @@ def move_plunge():
     if LEO_MODE:
         global PID_P, PID_I
         global plunge_done_flag
-        stop_position = -26000
-        plunge_speed = -10000
+        stop_position = -27500
+        plunge_speed = -8000
         plunge_timeout = 3
 
         ni_set('brake', True)  # false is braking
@@ -1433,10 +1458,11 @@ def move_plunge():
         logT.start()
         #printT = threading.Thread(target=printThread)
         #printT.start()
-        tempT = threading.Thread(target=tempLog)
-        tempT.start()
-        PID_P = 10000
-        PID_I = 10
+        if readTemp_flag:
+            tempT = threading.Thread(target=tempLog)
+            tempT.start()
+        PID_P = 4000
+        PID_I = 1
         epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))
 #        epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
 #        epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
@@ -1451,10 +1477,13 @@ def move_plunge():
                 break
 
         ni_set('brake', False)  # false is braking
+
         epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
 
         plunge_done_flag = True
         logT.join()
+        if readTemp_flag:
+            tempT.join()
         print("regained log thread")
         # printT.join()
         # print("regained print thread")
