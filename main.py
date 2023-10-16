@@ -863,10 +863,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def A_up_func(self):
         global a_position
         new_pos = a_position + int(self.A_spinbox.value())
-        if new_pos <= A_TRAVEL_LENGTH_STEPS:
-            A_move(A_UP, int(self.A_spinbox.value()))
-            a_position = new_pos
-            self.current_pos_label.setText(str(new_pos))  # update position label
+        A_move(A_UP, int(self.A_spinbox.value()))
+        a_position = new_pos
+        self.current_pos_label.setText(str(new_pos))  # update position label
 
 
     # function: A_stop_func
@@ -892,10 +891,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     def A_down_func(self):
         global a_position
         new_pos = a_position - int(self.A_spinbox.value())
-        if new_pos >= 0:
-            A_move(A_DOWN, int(self.A_spinbox.value()))
-            a_position = new_pos
-            self.A_pos_label.setText(str(new_pos))  # update position label
+        A_move(A_DOWN, int(self.A_spinbox.value()))
+        a_position = new_pos
+        self.A_pos_label.setText(str(new_pos))  # update position label
 
 
     def A_home_func(self):
@@ -1348,6 +1346,10 @@ def ni_set(device, value):
         task.stop()
 
 def A_move(dir, steps):
+    moveT = threading.Thread(target=A_move_thread, args=(dir, steps))
+    moveT.start()
+
+def A_move_thread(dir, steps):
     ni_set('A_motor_power', True)
     ni_set('A_dir', dir)
     with nidaqmx.Task() as step_task:
@@ -1360,7 +1362,6 @@ def A_move(dir, steps):
             time.sleep(A_SPEED)
         step_task.stop()
     ni_set('A_motor_power', False)
-
 def read_temperature():
     # reads voltages into a global array
     with nidaqmx.Task() as tempTask:
@@ -1482,6 +1483,7 @@ def move_plunge():
 
         plunge_done_flag = True
         logT.join()
+        A_move(A_UP, 3500)
         if readTemp_flag:
             tempT.join()
         print("regained log thread")
