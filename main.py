@@ -1458,7 +1458,7 @@ def move_plunge():
         logT = threading.Thread(target=dataLogThread)
         logT.start()
         #printT = threading.Thread(target=printThread)
-        #printT.start()
+         #printT.start()
         if readTemp_flag:
             tempT = threading.Thread(target=tempLog)
             tempT.start()
