@@ -1505,6 +1505,7 @@ def move_plunge():
         ser.write(bytes(msg, 'utf-8'))
         if ser.read() != ACK:
             return
+        # test
         # logT = threading.Thread(target=dataLogThread)
         # logT.start()
         #printT = threading.Thread(target=printThread)
