@@ -7,6 +7,8 @@ import datetime
 # import all necessary libraries
 # region imports_and_constants
 
+
+import pySerial
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -25,6 +27,14 @@ from PyQt6.QtWidgets import *
 import pyqtgraph as pg
 import qdarktheme
 LEO_MODE = 1
+
+# serial constants
+# TODO: move these into a json or similar to easily share between python and stm32 scripts
+ACK     = '1\r\n'
+PLUNGE  = '2'
+MOVE    = '3'
+BRAKE   = '5'
+RELEASE = '4'
 
 # EPOS Library Path for commands - modify this if moving to a new computer
 path = 'C:\\Program Files (x86)\\maxon motor ag\\EPOS IDX\\EPOS2\\04 Programming\\Windows DLL\\LabVIEW\\maxon EPOS\\Resources\EposCmd64.dll'
@@ -275,7 +285,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
             epos.VCS_SetHomingParameter(keyHandle, nodeID, HOMING_ACCELERATION, HOMING_SPEED, HOMING_SPEED, 0, 0, 0, byref(pErrorCode))
             epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
-            ni_set('brake', True)
+            brake_set(False)
             ni_set('light', True)
             epos.VCS_FindHome(keyHandle, nodeID, 23, byref(pErrorCode))
             startT = timer()
@@ -286,7 +296,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                     break
                 if timer() - startT > 5:
                     break
-            ni_set('brake', False)
+            brake_set(True)
             ni_set('light', False)
 
             startT = timer()
@@ -955,21 +965,44 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                    "}")
         self.tempButton.stateChanged.connect(self.tempToggle)
 
+        self.timepointBox = QDoubleSpinBox(self)
+        self.timepointBox.setMaximum(40000)  # max nudge value
+        self.timepointBox.setMinimum(1)  # min nudge value
+        self.timepointBox.setValue(200)  # default value
+        self.timepointBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        # self.timepointBox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.timepointBox.setFont(QFont('Munhwa Gothic', 40))
+        self.timepointBox.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
 
         vbox = QVBoxLayout()
 
         vbox.addWidget(self.brakeButton)
         vbox.addWidget(self.tempButton)
 
+        vbox2 = QVBoxLayout()
+        vbox2.addWidget(self.timepointBox)
+
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
         vbox.setSpacing(10)
-        groupBox.setLayout(vbox)
+        vbox2.setAlignment(Qt.AlignmentFlag.AlignTop)
+        vbox2.setSpacing(10)
+
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(vbox)
+        hbox.addWidget(vbox2)
+        hbox.setSpacing(50)
+
+        groupBox.setLayout(hbox)
         return groupBox
 
 
     def brakeFunc(self):
-        ni_set('brake', self.brakeButton.isChecked())
+        brake_set(self.brakeButton.isChecked())
 
     def tempToggle(self):
         global readTemp_flag
@@ -1331,6 +1364,17 @@ def start_app():
 NI INSTRUMENT COMMUNICATION COMMANDS - HEATER, GAS EXCHANGE, LIGHT
 """
 
+# region serial_comms
+def brake_set(state):
+    if state:
+        ser.write(b'5') # brake
+    else:
+        ser.write(b'4') # release
+    resp = ser.read(3)
+    return (resp == ACK)
+
+# endregion serial_comms
+
 
 # region NI_instruments
 
@@ -1450,13 +1494,19 @@ def move_plunge():
     if LEO_MODE:
         global PID_P, PID_I
         global plunge_done_flag
-        stop_position = -27500
+        # stop_position = -27500
+        stop_position = 15000
+        ''' timepoint pos is actually a function of timepoint in ms '''
+        timepoint_position = 10000
         plunge_speed = -8000
         plunge_timeout = 3
 
-        ni_set('brake', True)  # false is braking
-        logT = threading.Thread(target=dataLogThread)
-        logT.start()
+        msg = '2' + str(stop_position) + ('0' if timepoint_position < 10000 else '') + str(timepoint_position)
+        ser.write(bytes(msg, 'utf-8'))
+        if ser.read() != ACK:
+            return
+        # logT = threading.Thread(target=dataLogThread)
+        # logT.start()
         #printT = threading.Thread(target=printThread)
          #printT.start()
         if readTemp_flag:
@@ -1473,11 +1523,19 @@ def move_plunge():
         epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
         epos.VCS_MoveWithVelocity(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
         start_time = timer()
-        while True:
-            if get_position() <= stop_position:
-                break
 
-        ni_set('brake', False)  # false is braking
+        ser.read()
+        posLog = []
+        i = 0
+        while True:
+            log = ser.read()
+            print(log)
+            if log == ACK:
+                break
+            else:
+                poslog[i] = log
+                i += 1
+        print(posLog)
 
         epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
 
@@ -1548,7 +1606,7 @@ def move_nudge(direction, nudge_step):
     epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration, byref(pErrorCode))  # set profile parameters
     epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))
     time.sleep(.1)
-    ni_set('brake', True)
+    brake_set(False)
     epos.VCS_MoveToPosition(keyHandle, nodeID, nudge_step, True, True, byref(pErrorCode))  # move to position
     time.sleep(.5)
     #while True:
@@ -1556,7 +1614,7 @@ def move_nudge(direction, nudge_step):
     #    print(pCurrent.value)
     #    if pCurrent.value <= 400:  # not mving
     #        break
-    ni_set('brake', False)
+    brake_set(True)
 
 
 
@@ -1628,6 +1686,8 @@ def close_device(key):
 
 # main func
 if __name__ == '__main__':
+    ser = serial.Serial('/dev/ttyUSB0', 115200)  # open serial port
+    ser.write(b'Z')  # write a string
 
     print("******************************************************************************************************")
     print("Initializing MAXON interface, will exit if failed")
