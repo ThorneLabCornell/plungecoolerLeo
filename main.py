@@ -8,7 +8,7 @@ import datetime
 # region imports_and_constants
 
 
-import pySerial
+import serial
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -30,7 +30,8 @@ LEO_MODE = 1
 
 # serial constants
 # TODO: move these into a json or similar to easily share between python and stm32 scripts
-ACK     = '1\r\n'
+ACK     = b'Z\r\n'
+BAD     = 'X'
 PLUNGE  = '2'
 MOVE    = '3'
 BRAKE   = '5'
@@ -65,7 +66,7 @@ deceleration = 10000000  # rpm/s
 # NI DAQ configuration and pinout
 DEVICE_NAME = "Dev1"
 PINOUT = { # too lazy to implement and enum right now
-    'brake':                DEVICE_NAME + "/port1/line2",
+    'plunge_home':          DEVICE_NAME + "/port1/line4",
     'vacuum':               DEVICE_NAME + "/port0/line2",
     'heater':               DEVICE_NAME + "/port0/line3",
     'heater_controller':    DEVICE_NAME + "/port0/line6",
@@ -76,7 +77,8 @@ PINOUT = { # too lazy to implement and enum right now
     'A_en':                 DEVICE_NAME + "/port2/line6",
     'A_home':               DEVICE_NAME + "/port2/line0",
     'A_motor_power':        DEVICE_NAME + "/port0/line5",
-    'thermocouple':         DEVICE_NAME + "/ai6"
+    'thermocouple':         DEVICE_NAME + "/ai6",
+    'stm_rst':              DEVICE_NAME + "/port1/line2"
 }
 
 # constants for A stepper motor
@@ -85,8 +87,12 @@ A_DOWN = False
 A_SPEED = .001
 A_TRAVEL_LENGTH_STEPS = 10000000 # arbitrary right now
 a_position = 10000 # global for a axis position tracking
+A_STEPS_PER_MM = 0
 
-readTemp_flag = False;
+
+ser = None
+
+readTemp_flag = False
 
 # global data collection
 plungeTime = []
@@ -113,6 +119,7 @@ plunge_temp_time = []
 pos_home_raw = 38000
 read_time = True
 val = 0  # temporary temperature storage
+startWindow = None
 
 # endregion imports_and_constants
 
@@ -159,9 +166,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
         self.tab3 = self.controlBox()
+        self.tab4 = self.panTiltBox()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
         self.tabs.addTab(self.tab3, "Control Panel")
+        self.tabs.addTab(self.tab4, "Pan/Tilt")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
     # function: plunge_options
@@ -278,26 +287,41 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def homeBegin(self):
-        move_nudge('up', 1)
-
+        move_nudge("up", 1);
         if LEO_MODE:
             pCurrent = c_short()
 
-            epos.VCS_SetHomingParameter(keyHandle, nodeID, HOMING_ACCELERATION, HOMING_SPEED, HOMING_SPEED, 0, 0, 0, byref(pErrorCode))
-            epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
+            #epos.VCS_SetHomingParameter(keyHandle, nodeID, HOMING_ACCELERATION, HOMING_SPEED, HOMING_SPEED, 0, 4294967295,0, byref(pErrorCode))
+
+            epos.VCS_ActivateProfileVelocityMode(keyHandle, nodeID, byref(pErrorCode))
+            epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
             brake_set(False)
-            ni_set('light', True)
-            epos.VCS_FindHome(keyHandle, nodeID, 23, byref(pErrorCode))
+#            epos.VCS_FindHome(keyHandle, nodeID, -3, byref(pErrorCode))
+            epos.VCS_MoveWithVelocity(keyHandle, nodeID, 1000, byref(pErrorCode))
+
             startT = timer()
-            while True:
-                epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
-                print("current: " + str(pCurrent.value))
-                if pCurrent.value <= 400 and (timer()-startT > .05): #not mving, hit switch
-                    break
-                if timer() - startT > 5:
-                    break
-            brake_set(True)
-            ni_set('light', False)
+            with nidaqmx.Task() as home_task:
+                home_task.di_channels.add_di_chan(PINOUT['plunge_home'])
+                home_task.start()
+                while True:
+                    homed = home_task.read()
+                    epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
+                    print("current: " + str(pCurrent.value))
+                    if homed:# pCurrent.value <= 400 and (timer()-startT > .5):
+                        time.sleep(.6)  # hit limit sw, but keep going a bit to bottom out
+                        brake_set(True)
+                        epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+                        break
+                    if timer() - startT > 5:
+                        epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+                        brake_set(True)
+
+                        break
+                home_task.stop()
+
+            '''define current position as the new home'''
+            epos.VCS_ActivateHomingMode(keyHandle, nodeID, byref(pErrorCode))
+            epos.VCS_FindHome(keyHandle, nodeID, 35, byref(pErrorCode))
 
             startT = timer()
             while True:
@@ -317,7 +341,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def plungeBegin(self):
-        if abs(int(self.current_pos_label.text())) > 50:
+        if abs(get_position()) > 50:
             return
         ni_set('light', True)  # turn light on to show movement
         plungeData.clear()  # clear any previously collected data
@@ -367,7 +391,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                 if timer() - pptimer > pp_wait_time:
                     break
 
-            move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
+            move_plunge(True)  # arbitrary amount to ensure fault state reached; -ve is down
             ni_set('vacuum', True)
 
         elif self.plungevac.isChecked():  # vacuum time; note that this does not add to the p-p-p time
@@ -407,8 +431,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         ni_set('light', False)  # turn off light
         value_n = (-1 * (get_position()-pos_home_raw) * leadscrew_inc / encoder_pulse_num)  # approximate updated position
-        self.current_pos_label.setText("%4.2f cm" % (value_n))  # update label with position
-        self.graphVel.plot(plungeTime, plungeData)  # plot collected data
+        self.current_pos_label.setText(str(value_n))  # update label with position
+        self.graphVel.plot(plungeTime, plungePosData)  # plot collected data
         self.graphVelPos.plot(plungePosData, plungeData)  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
 
         # print(get_position())
@@ -634,6 +658,149 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
     # endregion nudgeBox_and_func
 
+    # region panTilt
+    def panTiltBox(self):
+        groupBox = QGroupBox("Pan/Tilt Control")  # create a GroupBox
+
+        self.tiltDown = QPushButton(self)
+        self.tiltDown.setFixedSize(200, 200)
+        self.tiltDown.setFont(QFont('Calibri', 30))
+        self.tiltDown.setText("↓")
+        self.tiltDown.setStyleSheet('QPushButton{color: white}')
+        self.tiltDown.setStyleSheet('''
+                        QPushButton {
+                            color: white; background-color : #CC7722; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;
+                        }
+                        QPushButton:pressed {
+                            color: white; background-color : #99520c; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;                               
+                        }
+                        QPushButton:disabled {
+                            background-color: gray;
+                        }
+                        ''')
+
+        self.tiltUp = QPushButton(self)
+        self.tiltUp.setFixedSize(200, 200)
+        self.tiltUp.setFont(QFont('Calibri', 30))
+        self.tiltUp.setText("↑")
+        self.tiltUp.setStyleSheet('QPushButton{color: white}')
+        self.tiltUp.setStyleSheet('''
+                        QPushButton {
+                            color: white; background-color : #CC7722; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;
+                        }
+                        QPushButton:pressed {
+                            color: white; background-color : #99520c; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;                               
+                        }
+                        QPushButton:disabled {
+                            background-color: gray;
+                        }
+                        ''')
+        self.panLeft = QPushButton(self)
+        self.panLeft.setFixedSize(200, 200)
+        self.panLeft.setFont(QFont('Calibri', 30))
+        self.panLeft.setText("←")
+        self.panLeft.setStyleSheet('QPushButton{color: white}')
+        self.panLeft.setStyleSheet('''
+                        QPushButton {
+                            color: white; background-color : #CC7722; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;
+                        }
+                        QPushButton:pressed {
+                            color: white; background-color : #99520c; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;                               
+                        }
+                        QPushButton:disabled {
+                            background-color: gray;
+                        }
+                        ''')
+
+        self.panRight = QPushButton(self)
+        self.panRight.setFixedSize(200, 200)
+        self.panRight.setFont(QFont('Calibri', 30))
+        self.panRight.setText("→")
+        self.panRight.setStyleSheet('QPushButton{color: white}')
+        self.panRight.setStyleSheet('''
+                        QPushButton {
+                            color: white; background-color : #CC7722; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;
+                        }
+                        QPushButton:pressed {
+                            color: white; background-color : #99520c; border-radius : 20px;
+                            border : 0px solid black; font-weight : bold;                               
+                        }
+                        QPushButton:disabled {
+                            background-color: gray;
+                        }
+                        ''')
+
+        self.pan_spinbox = QDoubleSpinBox(self)
+        self.pan_spinbox.setMaximum(10)  # max nudge value
+        self.pan_spinbox.setMinimum(0.1)  # min nudge value
+        self.pan_spinbox.setValue(2)  # default value
+        self.pan_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
+        self.pan_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.pan_spinbox.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
+
+        self.tilt_spinbox = QDoubleSpinBox(self)
+        self.tilt_spinbox.setMaximum(10)  # max nudge value
+        self.tilt_spinbox.setMinimum(0.1)  # min nudge value
+        self.tilt_spinbox.setValue(2)  # default value
+        self.tilt_spinbox.setSingleStep(0.05)  # incremental/decremental value when arrows are pressed
+        self.tilt_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.tilt_spinbox.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
+
+        vbox = QGridLayout()
+
+        self.tiltUp.pressed.connect(self.tiltUpFunc)
+        self.tiltDown.pressed.connect(self.tiltDownFunc)
+        self.panLeft.pressed.connect(self.panLeftFunc)
+        self.panRight.pressed.connect(self.panRightFunc)
+
+        vbox.addWidget(self.tiltUp, 0, 1)
+        vbox.addWidget(self.tiltDown, 2, 1)
+        vbox.addWidget(self.panLeft, 1, 0)
+        vbox.addWidget(self.panRight, 1, 2)
+
+        vbox.addWidget(self.tilt_spinbox, 3, 0, 1, 3)
+        vbox.addWidget(self.pan_spinbox, 4, 0, 1, 3)
+
+        # set alignment, spacing, and assign layout to groupBox
+        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+        vbox.setSpacing(10)
+
+        groupBox.setLayout(vbox)
+        return groupBox
+
+    def tiltUpFunc(self):
+        self.movePanTilt('1', self.tilt_spinbox.value())
+    def tiltDownFunc(self):
+        self.movePanTilt('2', self.tilt_spinbox.value())
+
+    def panLeftFunc(self):
+        self.movePanTilt('3', self.pan_spinbox.value())
+
+    def panRightFunc(self):
+        self.movePanTilt('4', self.pan_spinbox.value())
+
+    def movePanTilt(self, axis, amt):
+        msg = "1"
+        msg += axis
+        msg += str(int(amt*100)).zfill(4)  # amt*100 ensures integer
+        print(msg)
+        ser.write(bytes(msg, 'utf-8'))
+
+    # endregion panTilt
+
     # region A_axis
 
     # function: ABox
@@ -805,9 +972,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # connect buttons to associated functions
         # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
         self.A_start.clicked.connect(self.A_start_func)
-        self.A_up.pressed.connect(self.A_up_func)
+        self.A_up.clicked.connect(self.A_up_func)
         self.A_stop.clicked.connect(self.A_stop_func)
-        self.A_down.pressed.connect(self.A_down_func)
+        self.A_down.clicked.connect(self.A_down_func)
         self.A_home.clicked.connect(self.A_home_func)
         self.A_move_to.clicked.connect(self.A_move_to_func)
 
@@ -854,7 +1021,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def A_start_func(self):
-        ni_set('A_en', True)
+        ni_set('A_en', False)
         # ni_set('light', True)  # turn on light to indicate movement stage
         # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons
         self.A_home.setEnabled(True)
@@ -883,7 +1050,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # parameters: self
     # return: none
     def A_stop_func(self):
-        ni_set('A_en', False)
+        ni_set('A_en', True)
+
         ni_set('A_motor_power', False)
 
         self.A_up.setEnabled(False)
@@ -955,6 +1123,16 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                    "}")
         self.brakeButton.stateChanged.connect(self.brakeFunc)
 
+        self.lightButton = QCheckBox(self)
+        self.lightButton.setText("LIGHT TOGGLE")
+        self.lightButton.setFont(QFont('Munhwa Gothic', 30))
+        self.lightButton.setStyleSheet("QCheckBox::indicator"
+                                  "{"
+                                  "width : 70px;"
+                                  "height : 70px;"
+                                  "}")
+        self.lightButton.stateChanged.connect(self.lightFunc)
+
         self.tempButton = QCheckBox(self)
         self.tempButton.setText("TEMP TOGGLE")
         self.tempButton.setFont(QFont('Munhwa Gothic', 30))
@@ -965,8 +1143,15 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                    "}")
         self.tempButton.stateChanged.connect(self.tempToggle)
 
-        self.timepointBox = QDoubleSpinBox(self)
-        self.timepointBox.setMaximum(40000)  # max nudge value
+        self.resetButton = QPushButton(self)
+        self.resetButton.setText("Reset stm")
+        self.resetButton.pressed.connect(reset_stm)
+
+
+
+
+        self.timepointBox = QSpinBox(self)
+        self.timepointBox.setMaximum(16000)  # max nudge value
         self.timepointBox.setMinimum(1)  # min nudge value
         self.timepointBox.setValue(200)  # default value
         self.timepointBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
@@ -977,32 +1162,43 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                     QSpinBox::up-button{width: 400px}
                                     ''')
 
-        vbox = QVBoxLayout()
+        self.brakeBox = QSpinBox(self)
+        self.brakeBox.setMaximum(16000)  # max nudge value
+        self.brakeBox.setMinimum(1)  # min nudge value
+        self.brakeBox.setValue(15000)  # default value
+        self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        # selbrakentBox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.brakeBox.setFont(QFont('Munhwa Gothic', 40))
+        self.brakeBox.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
 
-        vbox.addWidget(self.brakeButton)
-        vbox.addWidget(self.tempButton)
+        vbox = QGridLayout()
 
-        vbox2 = QVBoxLayout()
-        vbox2.addWidget(self.timepointBox)
+        # column 1
+        vbox.addWidget(self.brakeButton, 0, 0)
+        vbox.addWidget(self.tempButton, 1, 0)
+        vbox.addWidget(self.resetButton, 2, 0)
+        vbox.addWidget(self.lightButton, 3, 0)
+
+        # column 2
+        vbox.addWidget(self.timepointBox, 0, 1)
+        vbox.addWidget(self.brakeBox, 1, 1)
 
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
         vbox.setSpacing(10)
-        vbox2.setAlignment(Qt.AlignmentFlag.AlignTop)
-        vbox2.setSpacing(10)
 
-
-        hbox = QHBoxLayout()
-        hbox.addWidget(vbox)
-        hbox.addWidget(vbox2)
-        hbox.setSpacing(50)
-
-        groupBox.setLayout(hbox)
+        groupBox.setLayout(vbox)
         return groupBox
 
 
     def brakeFunc(self):
         brake_set(self.brakeButton.isChecked())
+
+    def lightFunc(self):
+        ser.write((bytes('6\r\n', 'utf-8')) if self.lightButton.isChecked() else (bytes('7\r\n', 'utf-8')))
 
     def tempToggle(self):
         global readTemp_flag
@@ -1211,6 +1407,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                      "width : 70px;"
                                      "height : 70px;"
                                      "}")
+        self.plungevac.setEnabled(True)
 
         # create spinbox for time to pause with vacuum on
         self.vac_on_time = QDoubleSpinBox(self)
@@ -1348,6 +1545,7 @@ def start_app():
 
     # create Qt widget - window
     # all top-level widgets are windows -> if it isn't a child widget, or nested
+    global startWindow
     startWindow = MainWindow()
     startWindow.show()  # show the window - these are hidden by default
     exitCode = app.exec()
@@ -1357,6 +1555,9 @@ def start_app():
     ni_set('heater', True)
     ni_set('heater_controller', False)
     ni_set('light', False)
+    ni_set('stm_rst', True)
+
+
     close_device(keyHandle)
 
 
@@ -1364,20 +1565,41 @@ def start_app():
 NI INSTRUMENT COMMUNICATION COMMANDS - HEATER, GAS EXCHANGE, LIGHT
 """
 
+
 # region serial_comms
 def brake_set(state):
+    global ser
+    print("brakin")
     if state:
-        ser.write(b'5') # brake
+        ser.write(bytes('5\r\n', 'utf-8'))  # brake
     else:
-        ser.write(b'4') # release
-    resp = ser.read(3)
-    return (resp == ACK)
+        ser.write(bytes('4\r\n', 'utf-8'))  # release
+    resp = ser.readline()
+#    print(resp)
+#    ser.reset_input_buffer() # clear any input
+    print("broke")
+
+#    return (resp == ACK)
 
 # endregion serial_comms
 
 
 # region NI_instruments
 
+def reset_stm():
+    global ser
+    ser.close()
+    with nidaqmx.Task() as task:
+        task.do_channels.add_do_chan(PINOUT['stm_rst'])
+        task.start()
+        print("resetting stm")
+        task.write(False)
+        time.sleep(.5)
+        task.write(True)
+
+        task.stop()
+    time.sleep(2)
+    ser = serial.Serial('COM6', 115200)  # open serial port
 
 # general function for toggling any digital out line on the ni daq
 def ni_set(device, value):
@@ -1389,13 +1611,17 @@ def ni_set(device, value):
         #time.sleep(.5)
         task.stop()
 
-def A_move(dir, steps):
-    moveT = threading.Thread(target=A_move_thread, args=(dir, steps))
+def A_move(direc, steps):
+
+    moveT = threading.Thread(target=A_move_thread, args=(direc, steps))
     moveT.start()
 
-def A_move_thread(dir, steps):
+'''TODO: FOR SOME REWASON MOTOR DIRTECTION IS ALWAYS GOING HIAGH=DOWN EVEEN WHEN UP IS CALLED'''
+
+
+def A_move_thread(direc, steps):
     ni_set('A_motor_power', True)
-    ni_set('A_dir', dir)
+    ni_set('A_dir', direc)
     with nidaqmx.Task() as step_task:
         step_task.do_channels.add_do_chan(PINOUT['A_step'])
         step_task.start()
@@ -1405,7 +1631,7 @@ def A_move_thread(dir, steps):
             step_task.write(False)
             time.sleep(A_SPEED)
         step_task.stop()
-    ni_set('A_motor_power', False)
+    # ni_set('A_motor_power', False)
 def read_temperature():
     # reads voltages into a global array
     with nidaqmx.Task() as tempTask:
@@ -1486,66 +1712,80 @@ def printThread():
     while not plunge_done_flag:
         print(get_position())
 
+
 # function: move_plunge
 # purpose: plunges the carriage downwards rapidly (can set speed and "position"; set to large -ve if plunging full
 # parameters: int, int
 # return: none
-def move_plunge():
+def move_plunge(ppp = False):
     if LEO_MODE:
+        global ser
         global PID_P, PID_I
         global plunge_done_flag
         # stop_position = -27500
-        stop_position = 15000
+        stop_position = startWindow.brakeBox.value()
         ''' timepoint pos is actually a function of timepoint in ms '''
-        timepoint_position = 10000
+        timepoint_position = startWindow.timepointBox.value()
         plunge_speed = -8000
         plunge_timeout = 3
 
-        msg = '2' + str(stop_position) + ('0' if timepoint_position < 10000 else '') + str(timepoint_position)
-        ser.write(bytes(msg, 'utf-8'))
-        if ser.read() != ACK:
-            return
-        # test
-        # logT = threading.Thread(target=dataLogThread)
-        # logT.start()
-        #printT = threading.Thread(target=printThread)
-         #printT.start()
+        # if not ppp:
+        #     ser.reset_input_buffer()
+        #     msg = '2' + str(stop_position).zfill(6) + str(timepoint_position).zfill(6) + '\r\n'
+        #
+        #     print(msg)
+        #     ser.write(bytes(msg, 'utf-8'))
+        #     x = ser.readline()  # command rx ack. start plunge
+        #     print(x)
+
+        logT = threading.Thread(target=dataLogThread)
+        logT.start()
         if readTemp_flag:
             tempT = threading.Thread(target=tempLog)
             tempT.start()
-        PID_P = 4000
+        PID_P = 400000
         PID_I = 1
+        brake_set(False)
+
         epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))
-#        epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
-#        epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
-#        epos.VCS_SetVelocityMust(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
 
-        epos.VCS_ActivateProfileVelocityMode(keyHandle, nodeID, byref(pErrorCode))
-        epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
-        epos.VCS_MoveWithVelocity(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
+        epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
+        epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
+        epos.VCS_SetVelocityMust(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
+
+        # epos.VCS_ActivateProfileVelocityMode(keyHandle, nodeID, byref(pErrorCode))
+        # epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
+        # epos.VCS_MoveWithVelocity(keyHandle, nodeID, plunge_speed, byref(pErrorCode))
+
         start_time = timer()
+        print("moved")
+        # if(ppp):
+        time.sleep(2)
+        # else:
+        # ser.readline()
+        brake_set(True)
+        #A_move(A_UP, 2000)
+        print("done plunge")
+        # posLog = []
+        # f = open("xd.txt", 'w')
+        # while True:
+        #     log = int.from_bytes(ser.readline()[:4], "big")
+        #     print(log)
+        #     f.write(str(log))
+        #     if log == 5901578:  # ack at end of transmission
+        #         break
+        #     else:
+        #         posLog.append(log)
+        # print(posLog)
+        # f.close()
 
-        ser.read()
-        posLog = []
-        i = 0
-        while True:
-            log = ser.read()
-            print(log)
-            if log == ACK:
-                break
-            else:
-                poslog[i] = log
-                i += 1
-        print(posLog)
-
-        epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
 
         plunge_done_flag = True
         logT.join()
-        A_move(A_UP, 3500)
+        #A_move(A_UP, 400)
         if readTemp_flag:
             tempT.join()
-        print("regained log thread")
+        # print("regained log thread")
         # printT.join()
         # print("regained print thread")
 
@@ -1659,7 +1899,6 @@ def initialize_device(key):
     # print("Device is in fault state.")
 
     epos.VCS_SetMaxFollowingError(key, nodeID, 2500, byref(pErrorCode))
-    # move_home()
     # a = c_long()
     # b = c_long()
     # c = c_long()
@@ -1687,8 +1926,6 @@ def close_device(key):
 
 # main func
 if __name__ == '__main__':
-    ser = serial.Serial('/dev/ttyUSB0', 115200)  # open serial port
-    ser.write(b'Z')  # write a string
 
     print("******************************************************************************************************")
     print("Initializing MAXON interface, will exit if failed")
@@ -1702,6 +1939,9 @@ if __name__ == '__main__':
 
     # initialize device (MAXON)
     x = initialize_device(keyHandle)
+    ser = serial.Serial('COM6', 115200)  # open serial port
+    #ser.open()
+
 
     if x[0] == 0 or x[1] == 0 or x[2] == 0 or x[3] == 0 or x[4] == 0:  # check for initialization failures
         print("Setup failed. Exiting program.")
