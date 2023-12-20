@@ -37,7 +37,6 @@ def start_app():
 
     motor.close()
 
-
 # main func
 if __name__ == '__main__':
     x = motor.init()

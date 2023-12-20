@@ -173,7 +173,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             }
                             QPushButton:disabled {
                                 background-color: gray;
-                            }
+                            } 
                             ''')
         self.plungeButton.pressed.connect(self.plungeBegin)  # tie button to plunging operation
 

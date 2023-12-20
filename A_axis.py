@@ -5,6 +5,7 @@ import ni
 import threading
 
 
+
 # function: nudgeBegin
 # purpose: initializes the device to receive nudge inputs via the buttons & disables plunge functionality
 # parameters: self

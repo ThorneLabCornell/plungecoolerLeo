@@ -16,6 +16,7 @@ RELEASE = '4'
 ser = serial.Serial('COM6', 115200, timeout=1.5)
 
 
+
 def clear_input():
     global ser
     ser.reset_input_buffer()

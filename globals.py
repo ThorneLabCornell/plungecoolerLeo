@@ -1,6 +1,7 @@
 '''globals file for passing data between gui and main program'''
 startWindow = None
 
+
 plungeData = []
 plungeTime = []
 plungeTemp = []

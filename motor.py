@@ -58,6 +58,7 @@ def close():
     close_device(keyHandle)
 
 
+
 # function: get_position
 # purpose: gets position data from encoder and returns it
 # parameters: none
