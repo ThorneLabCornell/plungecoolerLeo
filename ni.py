@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 import datetime
 import threading
 import motor
-#test comment
+
 
 # NI DAQ configuration and pinout
 DEVICE_NAME = "Dev1"
