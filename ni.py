@@ -25,10 +25,10 @@ PINOUT = { # too lazy to implement and enum right now
     'stm_rst':              DEVICE_NAME + "/port1/line2"
 }
 
-
+#testing code gary
 def reset_stm():
     with nidaqmx.Task() as task:
-        task.do_channels.add_do_chan(PINOUT['stm_rst'])
+        task.do_channels.add_do_chan(PINOUT['stm_rst_gary_test_code'])
         task.start()
         print("resetting stm")
         task.write(False)
