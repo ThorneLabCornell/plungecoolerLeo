@@ -37,7 +37,7 @@ def reset_stm():
 
         task.stop()
     time.sleep(2)
-#john test
+
 
 # general function for toggling any digital out line on the ni daq
 def ni_set(device, value):
