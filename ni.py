@@ -42,50 +42,50 @@ def reset_stm():
 # general function for toggling any digital out line on the ni daq
 def ni_set(device, value):
     with nidaqmx.Task() as task:
-        task.do_channels.add_do_chan(PINOUT[device])
+        task.do_channels.add_do_chan(PINOUT[device]) #device is in pinout list above (digital outputs)
         task.start()
-        print(device + " set to " + str(value))
+        print(device + " set to " + str(value)) #value is set to true or false
         task.write(value)
         #time.sleep(.5)
         task.stop()
 
 
-def read_temperature():
+def read_temperature():#used read temperature over plunge path
     # reads voltages into a global array
     start_time = timer()
     with nidaqmx.Task() as tempTask:
-        sampling_rate = 2000000  # can alter sampling rate for quicker time points depending on DAQ max reads
+        sampling_rate = 2000000  # can alter sampling rate for quicker time points depending on DAQ max reads (unit in Hz)
         try:
-            tempTask.ai_channels.add_ai_voltage_chan(PINOUT['temperature'])
-            # sets sample rate, clock source "" sets to internal clock
+            tempTask.ai_channels.add_ai_voltage_chan(PINOUT['temperature']) #analog input for temp
+            # sets sample rate, clock source "" sets to internal clock of the device is used, data is acquired on rising edge of analog input
             tempTask.timing.cfg_samp_clk_timing(sampling_rate, source="", active_edge=nidaqmx.constants.Edge.RISING)
 
-            val = tempTask.read()
-            globs.plungeTemp.append(val)
-            globs.plunge_temp_time.append(timer() - start_time)
+            val = tempTask.read() #read temperature
+            globs.plungeTemp.append(val) #records temperature in global array (plungeTemp)
+            globs.plunge_temp_time.append(timer() - start_time) #record current time point
         finally:
             return
 
 
 def startHome():
     home_task = nidaqmx.Task()
-    home_task.di_channels.add_di_chan(PINOUT['plunge_home'])
+    home_task.di_channels.add_di_chan(PINOUT['plunge_home']) #set digital input to plunge home pin locatoin
     home_task.start()
-    return home_task
+    return home_task #return plunge home pin channel
 
 
-# captures the next 5 seconds of temp data
-def tempLog(sample_seconds=5, sampling_rate=20000, log=True):
+# captures the next 5 seconds of temp data using thermocouple
+def tempLog(sample_seconds=5, sampling_rate=20000, log=True): #why is sampling rate lower than read_temperature
     with nidaqmx.Task() as tempTask:
-        num_samples = sampling_rate * sample_seconds
+        num_samples = sampling_rate * sample_seconds #Hz*time
         tempTask.ai_channels.add_ai_voltage_chan(PINOUT['thermocouple'])
         # sets sample rate, clock source "" sets to internal clock
         tempTask.timing.cfg_samp_clk_timing(sampling_rate, source="", active_edge=nidaqmx.constants.Edge.RISING,
-                                            sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
-                                            samps_per_chan=num_samples)
+                                            sample_mode=nidaqmx.constants.AcquisitionType.FINITE, #used to specify task acquire finite samples
+                                            samps_per_chan=num_samples)#used to specify number of sample to acquire
 
         print("done collecting T")
-        temps = tempTask.read(number_of_samples_per_channel=num_samples)
+        temps = tempTask.read(number_of_samples_per_channel=num_samples) #read set amount of sample data
         if log:
             filename = "C:\\Users\\ret-admin\\Desktop\\plunge_data\\temp\\"
             filename += datetime.datetime.now().strftime("%m-%d-%Y.%H-%M-%S")
@@ -95,23 +95,23 @@ def tempLog(sample_seconds=5, sampling_rate=20000, log=True):
             f.close()
         else:
             global current_probe_temp
-            current_probe_temp = (sum(temps) / len(temps))
+            current_probe_temp = (sum(temps) / len(temps)) #average temperature over 5 seconds
         print("regained temperature thread")
         tempTask.stop()
 
 
-def getT(self):
-    logT = threading.Thread(target=tempLog, args=(1, 100, False))
+def getT(self): #no idea what this is used for
+    logT = threading.Thread(target=tempLog, args=(1, 100, False)) #run templog function from above
     logT.start()
-    logT.join()
-    self.instant_temp_label.setText("%4.2f°C" % (globs.current_probe_temp))
+    logT.join() #waits for templog function to be completed before moving on
+    self.instant_temp_label.setText("%4.2f°C" % (globs.current_probe_temp)) #update UI with current average temperature (confirm with john)
 
 
 def collect_temp_profile(self):
     self.graphTempPos.clear()
     globs.plungeTemp.clear()
     globs.plunge_temp_time.clear()
-
+    #gui code
     self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
     styles = {"color": "white", "font-size": "10px"}
     self.graphTempPos.setLabel("left", "Voltage (V)", **styles)
@@ -149,22 +149,22 @@ def A_home_func(self):
     home_task.start()
     while True:
         step_task.write(True)
+        time.sleep(globs.A_SPEED) #what does A_SPEED have to do with sleep time
+        step_task.write(False) 
         time.sleep(globs.A_SPEED)
-        step_task.write(False)
-        time.sleep(globs.A_SPEED)
-        if home_task.read():
+        if home_task.read():#limit switch triggers
             break
-    globs.a_position = 0
-    self.A_pos_label.setText(str(0))
+    globs.a_position = 0 #set position to home
+    self.A_pos_label.setText(str(0))#update gui on A axis position
 
     home_task.stop()
     step_task.stop()
 
 def A_move_thread(direc, steps):
-    ni_set('A_motor_power', True)
-    ni_set('A_dir', direc)
+    ni_set('A_motor_power', True) #give power to stepper motor
+    ni_set('A_dir', direc) #direc (True/False) define turn direction
     with nidaqmx.Task() as step_task:
-        step_task.do_channels.add_do_chan(PINOUT['A_step'])
+        step_task.do_channels.add_do_chan(PINOUT['A_step']) #move motor by amount of steps desired
         step_task.start()
         for i in range(steps):
             step_task.write(True)
