@@ -10,10 +10,10 @@ import threading
 # parameters: self
 # return: none
 def A_start_func(self):
-    ni.ni_set('A_en', False)
+    ni.ni_set('A_en', False) #set enable signal to low to allow motor movement
     # ni_set('light', True)  # turn on light to indicate movement stage
-    # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons
-    self.A_home.setEnabled(True)
+    # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons in GUI (figured out by Gary after 3hrs:))
+    self.A_home.setEnabled(True) 
     self.A_up.setEnabled(True)
     self.A_stop.setEnabled(True)
     self.A_down.setEnabled(True)
@@ -35,7 +35,7 @@ def A_up_func(self):
 # parameters: self
 # return: none
 def A_stop_func(self):
-    ni.ni_set('A_en', True)
+    ni.ni_set('A_en', True)#set enable signal to high to stop motor movement
 
     self.A_up.setEnabled(False)
     self.A_stop.setEnabled(False)

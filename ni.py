@@ -19,7 +19,7 @@ PINOUT = { # too lazy to implement and enum right now
     'A_step':               DEVICE_NAME + "/port2/line4",
     'A_dir':                DEVICE_NAME + "/port2/line1",
     'A_en':                 DEVICE_NAME + "/port2/line6",
-    'A_home':               DEVICE_NAME + "/port2/line0",
+    'A_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal
     'A_motor_power':        DEVICE_NAME + "/port0/line5",
     'thermocouple':         DEVICE_NAME + "/ai6",
     'stm_rst':              DEVICE_NAME + "/port1/line2"
