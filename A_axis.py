@@ -25,9 +25,9 @@ def A_start_func(self):
 # parameters: self
 # return: none
 def A_up_func(self):
-    new_pos = globs.a_position - int(self.A_spinbox.value())
-    A_move(globs.A_UP, int(self.A_spinbox.value()))
-    self.current_pos_label.setText(str(new_pos))  # update position label
+    new_pos = globs.a_position - int(self.A_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
+    A_move(globs.A_UP, int(self.A_spinbox.value()))#A_UP is TRUE
+    self.current_pos_label.setText(str(new_pos))  # update position label in GUI
 
 
 # function: A_stop_func
@@ -36,7 +36,7 @@ def A_up_func(self):
 # return: none
 def A_stop_func(self):
     ni.ni_set('A_en', True)#set enable signal to high to stop motor movement
-
+    #disable control buttons and stop nudge buttons in GUI
     self.A_up.setEnabled(False)
     self.A_stop.setEnabled(False)
     self.A_down.setEnabled(False)
@@ -62,10 +62,11 @@ def A_move_to_func(self):
 
 
 def A_move(direc, steps):
+    #direction algorithm
     if direc == globs.A_UP:
         globs.a_position -= steps
     else:
         globs.a_position += steps
     moveT = threading.Thread(target=ni.A_move_thread, args=(direc, steps))
-    moveT.start()
+    moveT.start()#invokes A.movethread to be ran in parallel to current program (taking in inputs of direc and steps)
 

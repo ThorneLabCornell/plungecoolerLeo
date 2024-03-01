@@ -101,7 +101,7 @@ def tempLog(sample_seconds=5, sampling_rate=20000, log=True): #why is sampling r
 
 
 def getT(self): #no idea what this is used for
-    logT = threading.Thread(target=tempLog, args=(1, 100, False)) #run templog function from above
+    logT = threading.Thread(target=tempLog, args=(1, 100, False)) #run templog function from above (running in parallel with gui)
     logT.start()
     logT.join() #waits for templog function to be completed before moving on
     self.instant_temp_label.setText("%4.2f°C" % (globs.current_probe_temp)) #update UI with current average temperature (confirm with john)
