@@ -69,17 +69,17 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # will need another tab if alternative settings are desired in one GUI
         # will need another tab if alternative settings are desired in one GUI
 
-        self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
+        # self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
-        self.tab3 = self.controlBox()
-        self.tab4 = self.panTiltBox()
-        self.tab5 = self.plunge_config()
+        # self.tab3 = self.controlBox()
+        # self.tab4 = self.panTiltBox()
+        # self.tab5 = self.plunge_config()
 
-        self.tabs.addTab(self.tab1, 'Plunge')
+        # self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
-        self.tabs.addTab(self.tab3, "Control Panel")
-        self.tabs.addTab(self.tab4, "Pan/Tilt")
-        self.tabs.addTab(self.tab5, "Plunge Config")
+        # self.tabs.addTab(self.tab3, "Control Panel")
+        # self.tabs.addTab(self.tab4, "Pan/Tilt")
+        # self.tabs.addTab(self.tab5, "Plunge Config")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
         '''store "global" variables that need to be accesed by gui functions here'''
