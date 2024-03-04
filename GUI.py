@@ -2,6 +2,7 @@
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+
 import motor
 import sys
 import pyqtgraph as pg
@@ -27,28 +28,27 @@ def begin():
     globals.startWindow.show()  # show the window - these are hidden by default
     app.exec()
 
-
-class TimerWindow(QWidget):
+class TimerWindow(QWidget): #creats a widget class (what is the point of this class?)
     def __init__(self):
-        super().__init__()
+        super().__init__() #initialize window
         read_time = True
         self.setWindowTitle("Timer")  # set window title
-        self.window_start_time = timer()
+        self.window_start_time = timer() #local start time
         self.super_timer = timer()
-        layout = QVBoxLayout()
-        self.label = QLabel("Time Elapsed: ")
+        layout = QVBoxLayout() #organize widgets vertically
+        self.label = QLabel("Time Elapsed: ")#to display line of text
         layout.addWidget(self.label)
-        self.line = QLineEdit(self)
+        self.line = QLineEdit(self)#allow user to change line of text
         layout.addWidget(self.line)
-        self.setLayout(layout)
+        self.setLayout(layout)# uses layout manager
         timeconnect = QTimer(self)
-        timeconnect.timeout.connect(self.update_line)
+        timeconnect.timeout.connect(self.update_line)#connect time out signal of the timer to update_line function
         timeconnect.start()
 
     def update_line(self):
         if globs.read_time:
-            self.super_timer = timer()
-            self.line.setText("%4.4f" % (self.super_timer - self.window_start_time))
+            self.super_timer = timer()#updated current time
+            self.line.setText("%4.4f" % (self.super_timer - self.window_start_time))#show elapsed time
 
     def closeEvent(self, a0):
         self.close()
@@ -65,14 +65,16 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # create tabs
         self.tabs = QTabWidget()
-        self.tabs.setTabPosition(QTabWidget.TabPosition.North)  # set position of the tab to be on top
+        self.tabs.setTabPosition(QTabWidget.TabPosition.North)  # set position of the tab to be on top (north)
         # will need another tab if alternative settings are desired in one GUI
         # will need another tab if alternative settings are desired in one GUI
+
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
         self.tab3 = self.controlBox()
         self.tab4 = self.panTiltBox()
         self.tab5 = self.plunge_config()
+
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
         self.tabs.addTab(self.tab3, "Control Panel")
@@ -538,7 +540,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 background-color: gray;
                             }
                             ''')
-
+        #create button for homing the A axis
         self.A_home = QPushButton(self)
         self.A_home.setFixedSize(300, 300)
         self.A_home.setFont(QFont('Munhwa Gothic', 40))
@@ -637,13 +639,14 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # create label to indicate where to input nudge distance
         self.A_spin_label = QLabel(self)
-        self.A_spin_label.setText("Set nudge distance")
+        self.A_spin_label.setText("Set nudge distance")#not being used
         self.A_spin_label.setFont(QFont('Munhwa Gothic', 20))
 
         self.A_spin_label_2 = QLabel(self)
         self.A_spin_label_2.setText("Set move to position")
         self.A_spin_label_2.setFont(QFont('Munhwa Gothic', 20))
 
+        #guessing its for nudget distance
         self.A_spinbox_2 = QDoubleSpinBox(self)
         self.A_spinbox_2.setMaximum(globs.A_TRAVEL_LENGTH_STEPS)  # max nudge value
         self.A_spinbox_2.setMinimum(0)  # min nudge value
@@ -656,6 +659,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                     QSpinBox::up-button{width: 400px}
                                     ''')
 
+        #note not being used
         # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
         self.A_spinbox = QDoubleSpinBox(self)
         self.A_spinbox.setMaximum(globs.A_TRAVEL_LENGTH_STEPS)  # max nudge value
