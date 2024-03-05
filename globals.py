@@ -1,5 +1,5 @@
 '''globals file for passing data between gui and main program'''
-startWindow = None
+gui = None
 
 plungeData = []
 plungeTime = []

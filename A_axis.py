@@ -13,11 +13,11 @@ def A_start_func(self):
     ni.ni_set('A_en', False) #set enable signal to low to allow motor movement
     # ni_set('light', True)  # turn on light to indicate movement stage
     # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons in GUI (figured out by Gary after 3hrs:))
-    self.A_home.setEnabled(True)
-    self.A_up.setEnabled(True)
-    self.A_stop.setEnabled(True)
-    self.A_down.setEnabled(True)
-    self.A_move_to.setEnabled(True)
+    globs.gui.A_home.setEnabled(True)
+    globs.gui.A_up.setEnabled(True)
+    globs.gui.A_stop.setEnabled(True)
+    globs.gui.A_down.setEnabled(True)
+    globs.gui.A_move_to.setEnabled(True)
     print("start")
 
 
@@ -26,9 +26,9 @@ def A_start_func(self):
 # parameters: self
 # return: none
 def A_up_func(self):
-    new_pos = globs.a_position - int(self.A_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
-    A_move(globs.A_UP, int(self.A_spinbox.value()))#A_UP is TRUE
-    self.current_pos_label.setText(str(new_pos))  # update position label in GUI
+    new_pos = globs.a_position - int(globs.gui.A_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
+    A_move(globs.A_UP, int(globs.gui.A_spinbox.value()))#A_UP is TRUE
+    globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
 
 
 # function: A_stop_func
@@ -38,11 +38,11 @@ def A_up_func(self):
 def A_stop_func(self):
     ni.ni_set('A_en', True)#set enable signal to high to stop motor movement
     #disable control buttons and stop nudge buttons in GUI
-    self.A_up.setEnabled(False)
-    self.A_stop.setEnabled(False)
-    self.A_down.setEnabled(False)
-    self.A_home.setEnabled(False)
-    self.A_move_to.setEnabled(False)
+    globs.gui.A_up.setEnabled(False)
+    globs.gui.A_stop.setEnabled(False)
+    globs.gui.A_down.setEnabled(False)
+    globs.gui.A_home.setEnabled(False)
+    globs.gui.A_move_to.setEnabled(False)
 
 
 # function: downNudgeFunc
@@ -50,13 +50,13 @@ def A_stop_func(self):
 # parameters: self
 # return: none
 def A_down_func(self):
-    new_pos = globs.a_position + int(self.A_spinbox.value())
-    A_move(globs.A_DOWN, int(self.A_spinbox.value()))
-    self.A_pos_label.setText(str(new_pos))  # update position label
+    new_pos = globs.a_position + int(globs.gui.A_spinbox.value())
+    A_move(globs.A_DOWN, int(globs.gui.A_spinbox.value()))
+    globs.gui.A_pos_label.setText(str(new_pos))  # update position label
 
 
 def A_move_to_func(self):
-    to_pos = int(self.A_spinbox_2.value())
+    to_pos = int(globs.gui.A_spinbox_2.value())
     direction = globs.A_UP if to_pos > globs.a_position else globs.A_DOWN
     amount = abs(globs.a_position - to_pos)
     A_move(direction, amount)

@@ -155,7 +155,7 @@ def A_home_func(self):
         if home_task.read():#limit switch triggers
             break
     globs.a_position = 0 #set position to home
-    self.A_pos_label.setText(str(0))#update gui on A axis position
+    globs.gui.A_pos_label.setText(str(0))#update gui on A axis position
 
     home_task.stop()
     step_task.stop()

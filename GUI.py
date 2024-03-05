@@ -24,8 +24,8 @@ def begin():
 
     # create Qt widget - window
     # all top-level widgets are windows -> if it isn't a child widget, or nested
-    globs.startWindow = MainWindow()
-    globs.startWindow.show()  # show the window - these are hidden by default
+    globs.gui = MainWindow()
+    globs.gui.show()  # show the window - these are hidden by default
     app.exec()
 
 class TimerWindow(QWidget): #creats a widget class (what is the point of this class?)

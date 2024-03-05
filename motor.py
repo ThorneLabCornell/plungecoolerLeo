@@ -85,7 +85,7 @@ def get_velocity():
 # parameters: int, int
 # return: none
 def move_plunge(ppp = False):
-    stop_position = int(globs.startWindow.brakeBox.value() + get_position()/2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
+    stop_position = int(globs.gui.brakeBox.value() + get_position()/2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
     print("stop pos:" + str(stop_position))
     timepoint_position = int((globs.a_position - globs.a_offset)/globs.A_STEPS_PER_UM)
 
