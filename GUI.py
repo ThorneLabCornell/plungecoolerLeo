@@ -12,7 +12,7 @@ import threading
 
 import globals as globs
 import ni
-import stm
+#import stm
 import A_axis
 
 
@@ -24,8 +24,8 @@ def begin():
 
     # create Qt widget - window
     # all top-level widgets are windows -> if it isn't a child widget, or nested
-    globals.startWindow = MainWindow()
-    globals.startWindow.show()  # show the window - these are hidden by default
+    globs.startWindow = MainWindow()
+    globs.startWindow.show()  # show the window - these are hidden by default
     app.exec()
 
 class TimerWindow(QWidget): #creats a widget class (what is the point of this class?)
@@ -689,7 +689,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.A_up.clicked.connect(A_axis.A_up_func)
         self.A_stop.clicked.connect(A_axis.A_stop_func)
         self.A_down.clicked.connect(A_axis.A_down_func)
-        self.A_home.clicked.connect(A_axis.A_home_func)
+        #self.A_home.clicked.connect(A_axis.A_home_func)
         self.A_move_to.clicked.connect(A_axis.A_move_to_func)
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,

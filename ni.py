@@ -8,7 +8,7 @@ import motor
 
 
 # NI DAQ configuration and pinout
-DEVICE_NAME = "Dev1"
+DEVICE_NAME = "Dev3"
 PINOUT = { # too lazy to implement and enum right now
     'plunge_home':          DEVICE_NAME + "/port1/line4",
     'vacuum':               DEVICE_NAME + "/port0/line2",

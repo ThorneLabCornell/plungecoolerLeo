@@ -13,11 +13,12 @@ def A_start_func(self):
     ni.ni_set('A_en', False) #set enable signal to low to allow motor movement
     # ni_set('light', True)  # turn on light to indicate movement stage
     # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons in GUI (figured out by Gary after 3hrs:))
-    self.A_home.setEnabled(True) 
+    self.A_home.setEnabled(True)
     self.A_up.setEnabled(True)
     self.A_stop.setEnabled(True)
     self.A_down.setEnabled(True)
     self.A_move_to.setEnabled(True)
+    print("start")
 
 
 # function: A_up_func

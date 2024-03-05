@@ -1,6 +1,6 @@
 import globals as globs
 from ctypes import *
-import stm
+#import stm
 import ni
 import time
 from timeit import default_timer as timer
