@@ -1,3 +1,4 @@
+''' a quick graphing script. disregard. '''
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,7 +8,6 @@ def moving_average(a, n=3):
     return ret[n - 1:] / n
 
 if __name__ == '__main__':
-
     values = np.zeros(200000)
     path = "C:\\Users\\ret-admin\\Desktop\\plunge_data\\temp\\"
     path += input()
