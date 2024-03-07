@@ -72,13 +72,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
         self.tab3 = self.controlBox()
-        self.tab4 = self.panTiltBox()
-        self.tab5 = self.plunge_config()
+#        self.tab4 = self.panTiltBox()
+#        self.tab5 = self.plunge_config()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
         self.tabs.addTab(self.tab3, "Control Panel")
-        self.tabs.addTab(self.tab4, "Pan/Tilt")
-        self.tabs.addTab(self.tab5, "Plunge Config")
+#        self.tabs.addTab(self.tab4, "Pan/Tilt")
+#        self.tabs.addTab(self.tab5, "Plunge Config")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
 
@@ -423,7 +423,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                         }
                         QPushButton:pressed {
                             color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
+                            border : 0px solid black; font-weight : bold;
                         }
                         QPushButton:disabled {
                             background-color: gray;
@@ -442,7 +442,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                         }
                         QPushButton:pressed {
                             color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
+                            border : 0px solid black; font-weight : bold;
                         }
                         QPushButton:disabled {
                             background-color: gray;
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                         }
                         QPushButton:pressed {
                             color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
+                            border : 0px solid black; font-weight : bold;
                         }
                         QPushButton:disabled {
                             background-color: gray;
@@ -479,7 +479,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                         }
                         QPushButton:pressed {
                             color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
+                            border : 0px solid black; font-weight : bold;
                         }
                         QPushButton:disabled {
                             background-color: gray;
@@ -1065,33 +1065,33 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.vac.setEnabled(True)
 
         # create graph widget to read temperature; updates in plunge stage
-        self.graphTempPos = pg.PlotWidget(self)
-        self.graphTempPos.setBackground('black')
-        self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
-        styles = {"color": "white", "font-size": "10px"}
-        self.graphTempPos.setLabel("left", "Voltage (V)", **styles)
-        self.graphTempPos.setLabel("bottom", "Position (cm)", **styles)
-        self.graphTempPos.showGrid(x=True, y=True)
-
-        self.temp_h_box = QHBoxLayout()
-
-        self.instant_temp_button = QPushButton(self)
-        self.instant_temp_button.setText("🤒")
-        self.instant_temp_button.pressed.connect(ni.getT)
-        self.temp_h_box.addWidget(self.instant_temp_button)
-
-        self.instant_temp_label = QLabel("")
-        self.instant_temp_label.setText("Read Temperature")
-        self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
-        self.temp_h_box.addWidget(self.instant_temp_label)
-
-        self.profile_temp_button = QPushButton(self)
-        self.profile_temp_button.setText("🤒📈")
-        self.profile_temp_button.pressed.connect(ni.collect_temp_profile)
-        self.temp_h_box.addWidget(self.profile_temp_button)
-
-        self.temp_h_group_box = QGroupBox()
-        self.temp_h_group_box.setLayout(self.temp_h_box)
+        # self.graphTempPos = pg.PlotWidget(self)
+        # self.graphTempPos.setBackground('black')
+        # self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
+        # styles = {"color": "white", "font-size": "10px"}
+        # self.graphTempPos.setLabel("left", "Voltage (V)", **styles)
+        # self.graphTempPos.setLabel("bottom", "Position (cm)", **styles)
+        # self.graphTempPos.showGrid(x=True, y=True)
+        #
+        # self.temp_h_box = QHBoxLayout()
+        #
+        # self.instant_temp_button = QPushButton(self)
+        # self.instant_temp_button.setText("🤒")
+        # self.instant_temp_button.pressed.connect(ni.getT)
+        # self.temp_h_box.addWidget(self.instant_temp_button)
+        #
+        # self.instant_temp_label = QLabel("")
+        # self.instant_temp_label.setText("Read Temperature")
+        # self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
+        # self.temp_h_box.addWidget(self.instant_temp_label)
+        #
+        # self.profile_temp_button = QPushButton(self)
+        # self.profile_temp_button.setText("🤒📈")
+        # self.profile_temp_button.pressed.connect(ni.collect_temp_profile)
+        # self.temp_h_box.addWidget(self.profile_temp_button)
+        #
+        # self.temp_h_group_box = QGroupBox()
+        # self.temp_h_group_box.setLayout(self.temp_h_box)
 
 
         # add widgets to vertical box layout
@@ -1100,8 +1100,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.h_power)
         vbox.addWidget(self.vac)
 
-        vbox.addWidget(self.graphTempPos)
-        vbox.addWidget(self.temp_h_group_box)
+#        vbox.addWidget(self.graphTempPos)
+#        vbox.addWidget(self.temp_h_group_box)
 
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)

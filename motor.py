@@ -84,7 +84,8 @@ def get_velocity():
 # return: none
 def move_plunge():
     # message to stm32 to start plunge process
-    stop_position = int(globs.gui.brakeBox.value() + get_position() / 2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
+#COMMENT
+    stop_position = int(globs.gui.brakeBox.value() + get_position() / 2) # + b/c get_position returns a negative. compensates for offset in case of ppp
     print("stop pos:" + str(stop_position))
     timepoint_position = int((globs.a_position - globs.a_offset)/globs.A_STEPS_PER_UM)
 
@@ -93,20 +94,22 @@ def move_plunge():
 
     stm.brake_set(True)
     stm.write(bytes(msg, 'utf-8'))
-
+#COMMENT
     # Start grabbing temp data if desired
-    if globs.readTemp_flag:
-        tempT = threading.Thread(target=ni.tempLog)
-        tempT.start()
-
+    # if globs.readTemp_flag:
+    #     tempT = threading.Thread(target=ni.tempLog)
+    #     tempT.start()
+    #
     stm.brake_set(False)  # free brake for plunge start
 
     # motor start accelerating to target velocity
-    epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode)) # PID confio
+    epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode)) # PID config
     epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
     epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
     epos.VCS_SetVelocityMust(keyHandle, nodeID, globs.plunge_speed, byref(pErrorCode))
 
+#Adding a thing here
+    start_time=timer()
     print("moved")  # debug
     stm.wait_for_ack()  # wait until stm says the plunge has reached the bottom (braked)
 
@@ -258,11 +261,11 @@ def home():
         epos.VCS_GetCurrentIs(keyHandle, nodeID, byref(pCurrent), byref(pErrorCode))
 
         if homed:
-            time.sleep(.4)  # hit limit sw, but keep going a bit to bottom out
+            time.sleep(.1)  # hit limit sw, but keep going a bit to bottom out
             stm.brake_set(True)
             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
             break
-        if timer() - startT > 3:
+        if timer() - startT > 1:
             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
             stm.brake_set(True)
 
@@ -289,11 +292,12 @@ def home():
 # function: plungeBegin
 # purpose: runs the plunge cooler down at 19000 rpm (2 m/s) until the device faults and hits the hard stop
 # parameters: self
+
 # return: none
 def plunge():
-    if abs(get_position()) > 15: # outside bounds of normal plunge condition, not homere properly
-        return
-    # resert global tracking variables
+    if abs(get_position()) > 100: # outside bounds of normal plunge condition, not homed properly
+         return
+    # reset global tracking variables
     globs.plungeData.clear()  # clear any previously collected data
     globs.plungeTime.clear()
     globs.plungePosData.clear()
@@ -302,12 +306,12 @@ def plunge():
     pptimer = timer()
     globs.gui.graphVel.clear()  # clear graph widget
     globs.gui.graphVelPos.clear()
-    globs.gui.graphTempPos.clear()
+#    globs.gui.graphTempPos.clear()
 
-    globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
-    styles = {"color": "white", "font-size": "10px"}
-    globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
-    globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
+    # globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
+    # styles = {"color": "white", "font-size": "10px"}
+    # globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
+    # globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
 
     if globs.gui.plungepause.isChecked():
 
@@ -377,12 +381,12 @@ def plunge():
     #     plungeTemp.append(read_temperature())
     #     plunge_temp_time.append(timer() - temp_timer)
 
-    globs.gui.graphTempPos.plot(globs.plunge_temp_time, globs.plungeTemp)  # this will repost the data after plunge
+#    globs.gui.graphTempPos.plot(globs.plunge_temp_time, globs.plungeTemp)  # this will repost the data after plunge
 
     value_n = (-1 * (get_position()-globs.pos_home_raw) * globs.leadscrew_inc / globs.encoder_pulse_num)  # approximate updated position
     globs.gui.current_pos_label.setText(str(value_n))  # update label with position
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
-    globs.gui.graphVelPos.plot(globs.plungePosData, globs.plungeData)  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
+    globs.gui.graphVelPos.plot(globs.plungePosData, globs.plungeData)  # plot vel vs pos -- set to plungePosData vs plungeData v vs pos
 
     # print(get_position())
 

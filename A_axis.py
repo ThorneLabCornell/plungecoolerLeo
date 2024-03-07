@@ -56,7 +56,7 @@ def A_down_func():
 
 def A_move_to_func():
     to_pos = int(globs.gui.A_spinbox_2.value())
-    direction = globs.A_UP if to_pos > globs.a_position else globs.A_DOWN
+    direction = globs.A_DOWN if to_pos > globs.a_position else globs.A_UP
     amount = abs(globs.a_position - to_pos)
     A_move(direction, amount)
 

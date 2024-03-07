@@ -4,11 +4,18 @@ DATE: 06/14/2023
 ACKNOWLEDGEMENTS: John Allen Indergaard for his sacrifices & Matt for his GUI praise
 """
 
+#
+#
+#
+# JOHN'S VERSION - ELiminating all but essential functionality.
+#
+#
+#
+
+
 import GUI
 import ni
 import motor
-
-
 
 # function: start_app
 # purpose: begins application and sets darkmode settings
