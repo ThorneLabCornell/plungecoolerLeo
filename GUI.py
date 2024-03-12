@@ -174,6 +174,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
         self.plungeButton.pressed.connect(motor.plunge)  # tie button to plunging operation
 
+
         self.timer_button = QPushButton()
         self.timer_button.setText("Show timer")
         self.timer_button.pressed.connect(self.open_timer_box)
@@ -1063,7 +1064,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.h_controller_check.setEnabled(True)
         self.h_power.setEnabled(True)
         self.vac.setEnabled(True)
-
+        #Initially have all checkboxes to be true since it was initialized in main function
+        self.h_controller_check.setChecked(True)
+        self.h_power.setChecked(True)
+        self.vac.setChecked(True)
         # create graph widget to read temperature; updates in plunge stage
         self.graphTempPos = pg.PlotWidget(self)
         self.graphTempPos.setBackground('black')
@@ -1246,10 +1250,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # create graph widget to read velocity; updates in plunge stage
         self.graphVel = pg.PlotWidget(self)
         self.graphVel.setBackground('black')
-        self.graphVel.setTitle("Plunge Cooler Velocity vs Time", color="w", size="10pt")
+        self.graphVel.setTitle("Plunge Cooler Position vs Time", color="w", size="10pt")
         styles = {"color": "white", "font-size": "10px"}
-        self.graphVel.setLabel("left", "Velocity (m/s)", **styles)
-        self.graphVel.setLabel("bottom", "Time (s)", **styles)
+        self.graphVel.setLabel("left", "Position (cm)", **styles)
+        self.graphVel.setLabel("bottom", "Time (ms)", **styles)
         self.graphVel.showGrid(x=True, y=True)
         self.graphVel.setXRange(0.3, 0)
         self.graphVel.setYRange(2.2, 0)

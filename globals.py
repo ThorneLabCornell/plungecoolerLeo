@@ -1,4 +1,5 @@
 """ globals file for passing data between gui and main program """
+
 gui = None  # stores gui once created, so it can be referenced from anywhere
 
 plungeData = []     # unused. TODO: deprecate.

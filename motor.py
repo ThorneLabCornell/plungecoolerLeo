@@ -5,6 +5,7 @@ import ni
 import time
 from timeit import default_timer as timer
 import threading
+from scipy.signal import savgol_filter
 
 # EPOS Library Path for commands - modify this if moving to a new computer
 path = 'C:\\Program Files (x86)\\maxon motor ag\\EPOS IDX\\EPOS2\\04 Programming\\Windows DLL\\LabVIEW\\maxon EPOS\\Resources\EposCmd64.dll'
@@ -83,7 +84,9 @@ def get_velocity():
 # parameters: int, int
 # return: none
 def move_plunge():
+    print("entered move_plunge")
     # message to stm32 to start plunge process
+    print("entered move plunge")
     stop_position = int(globs.gui.brakeBox.value() + get_position() / 2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
     print("stop pos:" + str(stop_position))
     timepoint_position = int((globs.a_position - globs.a_offset)/globs.A_STEPS_PER_UM)
@@ -102,23 +105,39 @@ def move_plunge():
     stm.brake_set(False)  # free brake for plunge start
 
     # motor start accelerating to target velocity
-    epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode)) # PID confio
+    epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))  # PID confio
     epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
     epos.VCS_ActivateVelocityMode(keyHandle, nodeID, byref(pErrorCode))
     epos.VCS_SetVelocityMust(keyHandle, nodeID, globs.plunge_speed, byref(pErrorCode))
 
     print("moved")  # debug
+    #stm.reset()
     stm.wait_for_ack()  # wait until stm says the plunge has reached the bottom (braked)
-
+    print("left")
     epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode)) # stop motor
 
     print("done plunge")
 
     stm.receivePlungeData()  # listen for the plunge data the stm sends
-
+    stm.reset()
+    globs.plungeVelData.append(0)
+    length=len(globs.plungePosData)-1
+    print("pos")
+    print(globs.plungePosData)
+    print("time")
+    print(globs.plungeTime)
+    for i in range(1,length):
+        globs.plungeVelData.append(((globs.plungePosData[i]-globs.plungePosData[i-1])/(globs.plungeTime[i]-globs.plungeTime[i-1])+(globs.plungePosData[i+1]-globs.plungePosData[i])/(globs.plungeTime[i+1]-globs.plungeTime[i]))/2*10)
+    globs.plungeVelData.append((globs.plungePosData[length] - globs.plungePosData[length - 1]) / (globs.plungeTime[length] - globs.plungeTime[length -1])*10)
+    print("velocity")
+    print(globs.plungeVelData)
+    print(len(globs.plungePosData))
+    print(len(globs.plungeVelData))
+    temp = savgol_filter(globs.plungeVelData,len(globs.plungeVelData), 3)
+    globs.plungeVelData=temp
+    print("no error")
     # for some reason the stm doesnt listen to the very first command after a plunge
     # TODO: fix this for real instead of a sketchy workaround. i'm at a loss for why this is happening.
-    stm.reset()
     plunge_done_flag = True
 
     if globs.readTemp_flag:  # if measuring temp, reclaim the thread
@@ -291,12 +310,16 @@ def home():
 # parameters: self
 # return: none
 def plunge():
-    if abs(get_position()) > 15: # outside bounds of normal plunge condition, not homere properly
+    print("pressseeed")
+    print(abs(get_position()))
+    if abs(get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
         return
+    print("forward")
     # resert global tracking variables
     globs.plungeData.clear()  # clear any previously collected data
     globs.plungeTime.clear()
     globs.plungePosData.clear()
+    globs.plungeVelData=[]
     globs.plungeTemp.clear()
     globs.plunge_temp_time.clear()
     pptimer = timer()
@@ -308,7 +331,7 @@ def plunge():
     styles = {"color": "white", "font-size": "10px"}
     globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
     globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
-
+    print(globs.gui.plungepause.isChecked())
     if globs.gui.plungepause.isChecked():
 
         epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
@@ -382,7 +405,7 @@ def plunge():
     value_n = (-1 * (get_position()-globs.pos_home_raw) * globs.leadscrew_inc / globs.encoder_pulse_num)  # approximate updated position
     globs.gui.current_pos_label.setText(str(value_n))  # update label with position
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
-    globs.gui.graphVelPos.plot(globs.plungePosData, globs.plungeData)  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
+    globs.gui.graphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData], [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
 
     # print(get_position())
 

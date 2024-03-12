@@ -40,7 +40,7 @@ def reset_stm():
 
 
 # general function for toggling any digital out line on the ni daq
-def ni_set(device, value):
+def ni_set(device: object, value: object) -> object:
     with nidaqmx.Task() as task: #variable callout
         task.do_channels.add_do_chan(PINOUT[device])
         task.start()

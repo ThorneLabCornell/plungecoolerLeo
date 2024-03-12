@@ -32,7 +32,9 @@ def brake_set(state):
 
 # blocks until gui sends ack character
 def wait_for_ack():
-    ser.readline()
+    print("waiting")
+    ser.read()
+    print("done")
 
 # sends msg to stm32
 def write(msg):
@@ -53,7 +55,7 @@ def receivePlungeData():
         if log == ACK:  # ack at end of transmission
             break
         else:
-            pos_ticks = int(log)*2
+            pos_ticks = int(log)*2 #debug
             pos_um = pos_ticks * globs.P_UM_PER_TICK
             globs.plungePosData.append(pos_ticks)  # *2 because the stm, counts half as many encoder ppr
             globs.plungeTime.append(i*.02)

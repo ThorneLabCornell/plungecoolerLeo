@@ -7,6 +7,7 @@ ACKNOWLEDGEMENTS: John Allen Indergaard for his sacrifices & Matt for his GUI pr
 import GUI
 import ni
 import motor
+import stm
 
 
 
@@ -20,18 +21,18 @@ def start_app():
     # when closed properly via x settings, reset all components that may have been on
     ni.ni_set('vacuum', True)
     ni.ni_set('heater', True)
-    ni.ni_set('heater_controller', False)
-    ni.ni_set('A_motor_power', True)
+    ni.ni_set('heater_controller', True)
+    #ni.ni_set('A_motor_power', True)
     ni.ni_set('light', False)
     ni.ni_set('stm_rst', True)
 
-    motor.close()
+    motor.close() #modified to test by gary
 
 
 # main func
 if __name__ == '__main__':
     x = motor.init()
-
+    #stm.reset()  # reset stm
     if x[0] == 0 or x[1] == 0 or x[2] == 0 or x[3] == 0 or x[4] == 0:  # check for initialization failures
         print("Setup failed. Exiting program.")
         motor.close()
