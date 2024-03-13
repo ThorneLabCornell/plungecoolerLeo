@@ -5,6 +5,7 @@ from timeit import default_timer as timer
 import datetime
 import threading
 import motor
+import Dispenser_Axis
 
 
 # NI DAQ configuration and pinout
