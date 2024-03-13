@@ -782,7 +782,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.brakeBox = QSpinBox(self)
         self.brakeBox.setMaximum(16000)  # max nudge value
         self.brakeBox.setMinimum(1)  # min nudge value
-        self.brakeBox.setValue(15000)  # default value
+        self.brakeBox.setValue(13600)  # default value
         self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
 
         self.brakeBox.setFont(QFont('Munhwa Gothic', 40))
@@ -1067,7 +1067,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         #Initially have all checkboxes to be true since it was initialized in main function
         self.h_controller_check.setChecked(True)
         self.h_power.setChecked(True)
-        self.vac.setChecked(True)
+        self.vac.setChecked(False)
         # create graph widget to read temperature; updates in plunge stage
         self.graphTempPos = pg.PlotWidget(self)
         self.graphTempPos.setBackground('black')
@@ -1292,8 +1292,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
 def closeGUI():
     print("Force exiting application")
-    ni.ni_set('vacuum',            True)
-    ni.ni_set('heater',            True)
+    ni.ni_set('vacuum',            False)
+    ni.ni_set('heater',            False)
     ni.ni_set('heater_controller', False)
     ni.ni_set('light',             False)
 

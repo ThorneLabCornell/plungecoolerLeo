@@ -86,7 +86,6 @@ def get_velocity():
 def move_plunge():
     print("entered move_plunge")
     # message to stm32 to start plunge process
-    print("entered move plunge")
     stop_position = int(globs.gui.brakeBox.value() + get_position() / 2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
     print("stop pos:" + str(stop_position))
     timepoint_position = int((globs.a_position - globs.a_offset)/globs.A_STEPS_PER_UM)
@@ -101,9 +100,7 @@ def move_plunge():
     if globs.readTemp_flag:
         tempT = threading.Thread(target=ni.tempLog)
         tempT.start()
-
     stm.brake_set(False)  # free brake for plunge start
-
     # motor start accelerating to target velocity
     epos.VCS_SetVelocityRegulatorGain(keyHandle, nodeID, PID_P, PID_I, byref(pErrorCode))  # PID confio
     epos.VCS_SetMaxAcceleration(keyHandle, nodeID, 4294967295, byref(pErrorCode))
@@ -111,7 +108,7 @@ def move_plunge():
     epos.VCS_SetVelocityMust(keyHandle, nodeID, globs.plunge_speed, byref(pErrorCode))
 
     print("moved")  # debug
-    #stm.reset()
+    #stm.ser.readline() debug
     stm.wait_for_ack()  # wait until stm says the plunge has reached the bottom (braked)
     print("left")
     epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode)) # stop motor
@@ -312,7 +309,7 @@ def home():
 def plunge():
     print("pressseeed")
     print(abs(get_position()))
-    if abs(get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
+    if abs(get_position()) > 50: # outside bounds of normal plunge condition, not homere properly
         return
     print("forward")
     # resert global tracking variables
