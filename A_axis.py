@@ -27,7 +27,7 @@ def A_start_func(self):
 def A_up_func():
     new_pos = globs.a_position - int(globs.gui.A_spinbox.value())
     A_move(globs.A_UP, int(globs.gui.A_spinbox.value()))
-    globs.gui.current_pos_label.setText(str(new_pos))  # update position label
+    globs.gui.A_pos_label.setText(str(new_pos))  # update position label
 
 
 # function: A_stop_func

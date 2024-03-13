@@ -14,6 +14,7 @@ plungeVelData = []  # velocity. currently unimplemented
 timepoint = 0       # target timepoint for plunge in ms
 a_offset = 0        # A axis posn where the loop is level with the homed plunger tip
 a_position = 5000   # current posn of A axis
+Dispenser_position = 5000   # current posn of Dispenser axis
 
 ln2_level = 25000       # in plunge encoder steps
 plunge_speed = -8000    # negative for downwards motion. 8000=1.6ish m/s,10000 = 2ish m/s

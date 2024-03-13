@@ -23,6 +23,13 @@ PINOUT = { # too lazy to implement and enum right now
     'A_motor_power':        DEVICE_NAME + "/port0/line5",
     'thermocouple':         DEVICE_NAME + "/ai6",
     'stm_rst':              DEVICE_NAME + "/port1/line2"
+#dispenser ports
+    'Dispenser_step':               DEVICE_NAME + "/port2/line4",
+    'Dispenser_dir':                DEVICE_NAME + "/port2/line1",
+    'Dispenser_en':                 DEVICE_NAME + "/port2/line6",
+    'Dispenser_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal
+    'Dispenser_motor_power':        DEVICE_NAME + "/port0/line5",
+    'microdrop_trig':               DEVICE_NAME+ "/port1/line6"#port 5 on daq
 }
 
 
@@ -172,3 +179,44 @@ def A_move_thread(direc, steps):
             step_task.write(False)
             time.sleep(globs.A_SPEED)
         step_task.stop()
+
+def Dispenser_home_func(self):
+    ni_set('Dispenser_motor_power', True)
+    ni_set('Dispenser_dir', globs.A_UP)  # TODO: Switch to Dispenser_UP when i move lim sw (with the proper distances)
+    step_task = nidaqmx.Task()
+    step_task.do_channels.add_do_chan(PINOUT['Dispenser_step'])
+    step_task.start()
+    home_task = nidaqmx.Task()
+    home_task.di_channels.add_di_chan(PINOUT['Dispenser_home'])
+    home_task.start()
+    while True:
+        step_task.write(True)
+        time.sleep(globs.A_SPEED) #TODO: Switch to Dispenser_SPEED
+        step_task.write(False) 
+        time.sleep(globs.A_SPEED)#TODO: Switch to Dispenser_SPEED
+        if home_task.read():#limit switch triggers
+            break
+    globs.a_position = 0 #set position to home
+    globs.gui.Dispenser_pos_label.setText(str(0))#update gui on A axis position
+
+    home_task.stop()
+    step_task.stop()
+
+def Dispenser_move_thread(direc, steps):
+    ni_set('Dispenser_motor_power', True) #give power to stepper motor
+    ni_set('Dispenser_dir', direc) #direc (True/False) define turn direction
+    with nidaqmx.Task() as step_task:
+        step_task.do_channels.add_do_chan(PINOUT['Dispenser_step']) #move motor by amount of steps desired
+        step_task.start()
+        for i in range(steps):
+            step_task.write(True)
+            time.sleep(globs.A_SPEED)#TODO: Switch to Dispenser_SPEED
+            step_task.write(False)
+            time.sleep(globs.A_SPEED)#TODO: Switch to Dispenser_SPEED
+        step_task.stop()
+
+def drop_dispense():
+    ni_set('microdrop_trig', False) 
+    ni_set('microdrop_trig', True)
+    ni_set('microdrop_trig', False)  
+

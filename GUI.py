@@ -13,6 +13,7 @@ import globals as globs
 import ni
 import stm
 import A_axis
+import Dispenser_Axis
 
 
 def begin():
@@ -74,11 +75,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.tab3 = self.controlBox()
         self.tab4 = self.panTiltBox()
         self.tab5 = self.plunge_config()
+        self.tab6 = self.DispenserBox()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
         self.tabs.addTab(self.tab3, "Control Panel")
         self.tabs.addTab(self.tab4, "Pan/Tilt")
         self.tabs.addTab(self.tab5, "Plunge Config")
+        self.tabs.addTab(self.tab6, 'Dispenser Axis')
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
 
@@ -747,6 +750,242 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.setSpacing(20)
         groupBox.setLayout(vbox)  # set layout for groupBox
         return groupBox
+
+# region Dispenser_axis
+
+    # function: DispenserBox
+    # purpose: creates middle GUI for A axis control
+    # parameters: self
+    # return: GroupBox
+    def DispenserBox(self):
+        groupBox = QGroupBox("Nudge")  # create GroupBox to hold QWidgets
+
+        # create button to initiate nudge: this button will set device enable states and disable home/plunge buttons
+        self.Dispenser_start = QPushButton(self)
+        self.Dispenser_start.setFixedSize(300, 300)
+        self.Dispenser_start.setFont(QFont('Munhwa Gothic', 40))
+        self.Dispenser_start.setText("Dispenser AXIS")
+        self.Dispenser_start.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #4682B4; border-radius : 15px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #0F52BA; border-radius : 15px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+        #create button for homing the A axis
+        self.Dispenser_home = QPushButton(self)
+        self.Dispenser_home.setFixedSize(300, 300)
+        self.Dispenser_home.setFont(QFont('Munhwa Gothic', 40))
+        self.Dispenser_home.setText("A HOME")
+        self.Dispenser_home.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #4682B4; border-radius : 15px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #0F52BA; border-radius : 15px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
+
+        # create button to nudge upwards
+        self.Dispenser_up = QPushButton(self)
+        self.Dispenser_up.setFixedSize(300, 100)
+        self.Dispenser_up.setFont(QFont('Calibri', 30))
+        self.Dispenser_up.setText("↑")
+        self.Dispenser_up.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to stop nudge process to enable plunge/home capabilities
+        self.Dispenser_stop = QPushButton(self)
+        self.Dispenser_stop.setFixedSize(300, 100)
+        self.Dispenser_stop.setFont(QFont('Munhwa Gothic', 30))
+        self.Dispenser_stop.setText("STOP")
+        self.Dispenser_stop.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #AA4A44; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #803833; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to nudge downwards
+        self.Dispenser_down = QPushButton(self)
+        self.Dispenser_down.setFixedSize(300, 100)
+        self.Dispenser_down.setFont(QFont('Calibri', 30))
+        self.Dispenser_down.setText("↓")
+        self.Dispenser_down.setStyleSheet('QPushButton{color: white}')
+        self.Dispenser_down.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        self.Dispenser_move_to = QPushButton(self)
+        self.Dispenser_move_to.setFixedSize(300, 170)
+        self.Dispenser_move_to.setFont(QFont('Calibri', 30))
+        self.Dispenser_move_to.setText("Move To")
+        self.Dispenser_move_to.setStyleSheet('QPushButton{color: white}')
+        self.Dispenser_move_to.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+        self.Dispenser_dispense = QPushButton(self)
+        self.Dispenser_dispense.setFixedSize(300, 170)
+        self.Dispenser_dispense.setFont(QFont('Calibri', 30))
+        self.Dispenser_dispense.setText("Dispense")
+        self.Dispenser_dispense.setStyleSheet('QPushButton{color: white}')
+        self.Dispenser_dispense.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #CC7722; border-radius : 20px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #99520c; border-radius : 20px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
+
+        # create label to indicate where to input nudge distance
+        self.Dispenser_spin_label = QLabel(self)
+        self.Dispenser_spin_label.setText("Set nudge distance")#not being used
+        self.Dispenser_spin_label.setFont(QFont('Munhwa Gothic', 20))
+
+        self.Dispenser_spin_label_2 = QLabel(self)
+        self.Dispenser_spin_label_2.setText("Set move to position")
+        self.Dispenser_spin_label_2.setFont(QFont('Munhwa Gothic', 20))
+
+        #guessing its for nudget distance
+        self.Dispenser_spinbox_2 = QDoubleSpinBox(self)
+        self.Dispenser_spinbox_2.setMaximum(globs.A_TRAVEL_LENGTH_STEPS)  # TODO: Change it to dispenser travel length steps
+        self.Dispenser_spinbox_2.setMinimum(0)  # min nudge value
+        self.Dispenser_spinbox_2.setValue(200)  # default value
+        self.Dispenser_spinbox_2.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        # self.A_spinbox_2.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.Dispenser_spinbox_2.setFont(QFont('Munhwa Gothic', 40))
+        self.Dispenser_spinbox_2.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
+
+        #note not being used
+        # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
+        self.Dispenser_spinbox = QDoubleSpinBox(self)
+        self.Dispenser_spinbox.setMaximum(globs.A_TRAVEL_LENGTH_STEPS)  # TODO: Change it to dispenser travel length steps
+        self.Dispenser_spinbox.setMinimum(1)  # min nudge value
+        self.Dispenser_spinbox.setValue(200)  # default value
+        self.Dispenser_spinbox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        #self.A_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.Dispenser_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.Dispenser_spinbox.setStyleSheet('''
+                            QSpinBox::down-button{width: 400px}
+                            QSpinBox::up-button{width: 400px}
+                            ''')
+
+        # create a label holding the positional data
+        self.Dispenser_pos_label = QLabel(self)
+        # note: this method of setting distance should be modified. takes a manually derived pos_home position
+        # value which indicates home, then subtracts it from the current position read by the encoder
+        self.Dispenser_pos_label.setText("Home to initialize position collection.")  # If inaccurate, home,
+        # press E-STOP, unpress, then restart program.
+        self.Dispenser_pos_label.setMaximumSize(300, 100)
+        self.Dispenser_pos_label.setFont(QFont('Munhwa Gothic', 20))
+        self.Dispenser_pos_label.setWordWrap(True)
+
+        # connect buttons to associated functions
+        # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
+        self.Dispenser_start.clicked.connect(Dispenser_axis.Dispenser_start_func)
+        self.Dispenser_up.clicked.connect(Dispenser_axis.Dispenser_up_func)
+        self.Dispenser_stop.clicked.connect(Dispenser_axis.Dispenser_stop_func)
+        self.Dispenser_down.clicked.connect(Dispenser_axis.Dispenser_down_func)
+        #self.A_home.clicked.connect(A_axis.A_home_func)
+        self.Dispenser_move_to.clicked.connect(Dispenser_axis.Dispenser_move_to_func)
+        self.Dispenser_dispense.clicked.connect(ni.drop_dispense)
+
+        # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
+        # and be able to read if button is help (checkable status)
+        self.Dispenser_up.setAutoRepeat(False)
+        self.Dispenser_up.setEnabled(False)
+        self.Dispenser_up.setCheckable(True)
+        self.Dispenser_down.setAutoRepeat(False)
+        self.Dispenser_down.setEnabled(False)
+        self.Dispenser_down.setCheckable(True)
+        self.Dispenser_stop.setEnabled(False)
+        self.Dispenser_home.setEnabled(False)
+        self.Dispenser_move_to.setEnabled(False)
+
+
+
+        # create vertical box layout
+        vbox = QGridLayout()
+        # add widgets to the box
+        vbox.addWidget(self.Dispenser_start, 0, 0)
+        vbox.addWidget(self.Dispenser_up, 1, 0)
+        vbox.addWidget(self.Dispenser_stop, 2, 0)
+        vbox.addWidget(self.Dispenser_down, 3, 0)
+        vbox.addWidget(self.Dispenser_spin_label, 4, 0)
+        vbox.addWidget(self.Dispenser_spinbox, 5, 0)
+
+        vbox.addWidget(self.Dispenser_home, 0, 1)
+        vbox.addWidget(self.Dispenser_move_to, 1, 1)
+        vbox.addWidget(self.Dispenser_spin_label_2, 4, 1)
+        vbox.addWidget(self.Dispenser_spinbox_2, 5, 1)
+        vbox.addWidget(self.Dispenser_dispense, 2, 1)
+        vbox.addWidget(self.Dispenser_pos_label, 6, 0, 0, 2)
+
+        # set alignment flags
+        vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        # set spacing between widgets
+        vbox.setSpacing(20)
+        groupBox.setLayout(vbox)  # set layout for groupBox
+        return groupBox
+
 
     # endregion nudgeBox_and_func
 
