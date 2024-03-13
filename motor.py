@@ -302,6 +302,7 @@ def home():
     print(str(get_position()))
 
 
+
 # function: plungeBegin
 # purpose: runs the plunge cooler down at 19000 rpm (2 m/s) until the device faults and hits the hard stop
 # parameters: self
@@ -309,7 +310,7 @@ def home():
 def plunge():
     print("pressseeed")
     print(abs(get_position()))
-    if abs(get_position()) > 50: # outside bounds of normal plunge condition, not homere properly
+    if abs(get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
         return
     print("forward")
     # resert global tracking variables
