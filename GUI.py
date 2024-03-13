@@ -1535,6 +1535,7 @@ def closeGUI():
     ni.ni_set('heater',            False)
     ni.ni_set('heater_controller', False)
     ni.ni_set('light',             False)
+    ni.ni_set('A_motor_power', False)
 
     motor.close()
     QApplication.closeAllWindows()

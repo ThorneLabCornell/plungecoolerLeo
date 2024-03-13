@@ -24,11 +24,11 @@ PINOUT = { # too lazy to implement and enum right now
     'thermocouple':         DEVICE_NAME + "/ai6",
     'stm_rst':              DEVICE_NAME + "/port1/line2"
 #dispenser ports
-    'Dispenser_step':               DEVICE_NAME + "/port2/line4",
-    'Dispenser_dir':                DEVICE_NAME + "/port2/line1",
-    'Dispenser_en':                 DEVICE_NAME + "/port2/line6",
-    'Dispenser_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal
-    'Dispenser_motor_power':        DEVICE_NAME + "/port0/line5",
+    'Dispenser_step':               DEVICE_NAME + "/port2/line7", #(39)
+    'Dispenser_dir':                DEVICE_NAME + "/port1/line5",#6
+    'Dispenser_en':                 DEVICE_NAME + "/port2/line5",#40
+    'Dispenser_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal (not needed for dispenser)
+    #'Dispenser_motor_power':        DEVICE_NAME + "/port0/line5",
     'microdrop_trig':               DEVICE_NAME+ "/port1/line6"#port 5 on daq
 }
 
@@ -181,7 +181,7 @@ def A_move_thread(direc, steps):
         step_task.stop()
 
 def Dispenser_home_func(self):
-    ni_set('Dispenser_motor_power', True)
+    ni_set('A_motor_power', True)
     ni_set('Dispenser_dir', globs.A_UP)  # TODO: Switch to Dispenser_UP when i move lim sw (with the proper distances)
     step_task = nidaqmx.Task()
     step_task.do_channels.add_do_chan(PINOUT['Dispenser_step'])
@@ -203,7 +203,7 @@ def Dispenser_home_func(self):
     step_task.stop()
 
 def Dispenser_move_thread(direc, steps):
-    ni_set('Dispenser_motor_power', True) #give power to stepper motor
+    ni_set('A_motor_power', True) #give power to stepper motor
     ni_set('Dispenser_dir', direc) #direc (True/False) define turn direction
     with nidaqmx.Task() as step_task:
         step_task.do_channels.add_do_chan(PINOUT['Dispenser_step']) #move motor by amount of steps desired
