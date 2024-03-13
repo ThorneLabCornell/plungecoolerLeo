@@ -22,7 +22,8 @@ PINOUT = { # too lazy to implement and enum right now
     'A_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal
     'A_motor_power':        DEVICE_NAME + "/port0/line5",
     'thermocouple':         DEVICE_NAME + "/ai6",
-    'stm_rst':              DEVICE_NAME + "/port1/line2"
+    'stm_rst':              DEVICE_NAME + "/port1/line2",
+    'microdrop_trig':       DEVICE_NAME+ "/port1/line6"#port 5 on daq
 }
 
 #testing code gary
@@ -168,7 +169,13 @@ def A_move_thread(direc, steps):
         step_task.start()
         for i in range(steps):
             step_task.write(True)
-            time.sleep(A_SPEED)
+            time.sleep(globs.A_SPEED)
             step_task.write(False)
-            time.sleep(A_SPEED)
+            time.sleep(globs.A_SPEED)
         step_task.stop()
+
+def drop_dispense():
+    ni_set('microdrop_trig', False) #give power to stepper
+    ni_set('microdrop_trig', True)
+    ni_set('microdrop_trig', False)  # give power to stepper
+

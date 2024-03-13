@@ -44,4 +44,5 @@ if __name__ == '__main__':
         # only get here if app is closed
         motor.close()
         GUI.closeGUI()
+        # ni.drop_dispense()
 

@@ -618,7 +618,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
 
         self.A_move_to = QPushButton(self)
-        self.A_move_to.setFixedSize(300, 340)
+        self.A_move_to.setFixedSize(300, 170)
         self.A_move_to.setFont(QFont('Calibri', 30))
         self.A_move_to.setText("Move To")
         self.A_move_to.setStyleSheet('QPushButton{color: white}')
@@ -635,7 +635,24 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 background-color: gray;
                             }
                             ''')
-
+        self.A_dispense = QPushButton(self)
+        self.A_dispense.setFixedSize(300, 170)
+        self.A_dispense.setFont(QFont('Calibri', 30))
+        self.A_dispense.setText("Dispense")
+        self.A_dispense.setStyleSheet('QPushButton{color: white}')
+        self.A_dispense.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #CC7722; border-radius : 20px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #99520c; border-radius : 20px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
 
         # create label to indicate where to input nudge distance
         self.A_spin_label = QLabel(self)
@@ -691,6 +708,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.A_down.clicked.connect(A_axis.A_down_func)
         #self.A_home.clicked.connect(A_axis.A_home_func)
         self.A_move_to.clicked.connect(A_axis.A_move_to_func)
+        self.A_dispense.clicked.connect(ni.drop_dispense)
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
@@ -717,10 +735,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.A_spinbox, 5, 0)
 
         vbox.addWidget(self.A_home, 0, 1)
-        vbox.addWidget(self.A_move_to, 1, 1, 3, 0)
+        vbox.addWidget(self.A_move_to, 1, 1)
         vbox.addWidget(self.A_spin_label_2, 4, 1)
         vbox.addWidget(self.A_spinbox_2, 5, 1)
-
+        vbox.addWidget(self.A_dispense, 2, 1)
         vbox.addWidget(self.A_pos_label, 6, 0, 0, 2)
 
         # set alignment flags
