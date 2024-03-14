@@ -22,7 +22,7 @@ def start_app():
     ni.ni_set('vacuum', False)
     ni.ni_set('heater', True)
     ni.ni_set('heater_controller', True)
-    #ni.ni_set('A_motor_power', True)
+    ni.ni_set('A_motor_power', True)
     ni.ni_set('light', False)
     ni.ni_set('stm_rst', True)
 
@@ -40,6 +40,7 @@ if __name__ == '__main__':
         print("Starting application...")
         start_app()
         # only get here if app is closed gracefully (right click)
+        ni.ni_set('A_motor_power', False)
         motor.close()
         GUI.closeGUI()
 

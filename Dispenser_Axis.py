@@ -13,11 +13,11 @@ def Dispenser_start_func(self):
     ni.ni_set('Dispenser_en', False) #set enable signal to low to allow motor movement
     # ni_set('light', True)  # turn on light to indicate movement stage
     # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons in GUI (figured out by Gary after 3hrs:))
-    globs.gui.Dispenser_home.setEnabled(True)
-    globs.gui.Dispenser_up.setEnabled(True)
-    globs.gui.Dispenser_stop.setEnabled(True)
-    globs.gui.Dispenser_down.setEnabled(True)
-    globs.gui.Dispenser_move_to.setEnabled(True)
+    #globs.gui.Dispenser_home.setEnabled(True)
+    globs.gui.upNudge.setEnabled(True)
+    globs.gui.stopButton.setEnabled(True)
+    globs.gui.downNudge.setEnabled(True)
+    globs.gui.startNudge.setEnabled(False)
     print("start")
 
 
@@ -25,10 +25,10 @@ def Dispenser_start_func(self):
 # purpose: nudges the carriage up
 # parameters: self
 # return: none
-def Dispenser_up_func(self):
-    new_pos = globs.Dispenser_position - int(globs.gui.Dispenser_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
-    Dispenser_move(globs.A_UP, int(globs.gui.Dispenser_spinbox.value()))#A_UP is TRUE
-    globs.gui.Dispenser_pos_label.setText(str(new_pos))  # update position label in GUI
+def Dispenser_up_func():
+    new_pos = globs.Dispenser_position - int(globs.gui.nudge_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
+    Dispenser_move(globs.A_UP, int(globs.gui.nudge_spinbox.value()))#A_UP is TRUE
+    globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
 
 
 # function: Dispenser_stop_func
@@ -38,21 +38,20 @@ def Dispenser_up_func(self):
 def Dispenser_stop_func(self):
     ni.ni_set('Dispenser_en', True)#set enable signal to high to stop motor movement
     #disable control buttons and stop nudge buttons in GUI
-    globs.gui.Dispenser_up.setEnabled(False)
-    globs.gui.Dispenser_stop.setEnabled(False)
-    globs.gui.Dispenser_down.setEnabled(False)
-    globs.gui.Dispenser_home.setEnabled(False)
-    globs.gui.Dispenser_move_to.setEnabled(False)
+    globs.gui.upNudge.setEnabled(False)
+    globs.gui.stopButton.setEnabled(False)
+    globs.gui.downNudge.setEnabled(False)
+    globs.gui.startNudge.setEnabled(True)
 
 
 # function: downNudgeFunc
 # purpose: nudges the carriage down
 # parameters: self
 # return: none
-def Dispenser_down_func(self):
-    new_pos = globs.Dispenser_position + int(globs.gui.Dispenser_spinbox.value())
-    Dispenser_move(globs.A_DOWN, int(globs.gui.Dispenser_spinbox.value()))
-    globs.gui.Dispenser_pos_label.setText(str(new_pos))  # update position label
+def Dispenser_down_func():
+    new_pos = globs.Dispenser_position + int(globs.gui.nudge_spinbox.value())
+    Dispenser_move(globs.A_DOWN, int(globs.gui.nudge_spinbox.value()))
+    globs.gui.current_pos_label.setText(str(new_pos))  # update position label
 
 
 def Dispenser_move_to_func(self):

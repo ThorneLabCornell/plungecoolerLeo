@@ -72,16 +72,16 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # will need another tab if alternative settings are desired in one GUI
         self.tab1 = self.plunge_options()  # instantiate the GroupBox and set it as a tab widget
         self.tab2 = self.ABox()
-        self.tab3 = self.controlBox()
-        self.tab4 = self.panTiltBox()
-        self.tab5 = self.plunge_config()
-        self.tab6 = self.DispenserBox()
+        self.tab3 = self.DispenserBox()
+        self.tab4 = self.controlBox()
+        self.tab5 = self.panTiltBox()
+        self.tab6 = self.plunge_config()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
-        self.tabs.addTab(self.tab3, "Control Panel")
-        self.tabs.addTab(self.tab4, "Pan/Tilt")
-        self.tabs.addTab(self.tab5, "Plunge Config")
-        self.tabs.addTab(self.tab6, 'Dispenser Axis')
+        self.tabs.addTab(self.tab3, 'Dispenser Axis')
+        self.tabs.addTab(self.tab4, "Control Panel")
+        self.tabs.addTab(self.tab5, "Pan/Tilt")
+        self.tabs.addTab(self.tab6, "Plunge Config")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
 
@@ -852,7 +852,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         self.timer_button = QPushButton()
         self.timer_button.setText("Reset STM")
-        self.timer_button.pressed.connect(stm.reset())
+        self.timer_button.pressed.connect(stm.reset)
 
         self.save_button = QPushButton()
         self.save_button.setText("Save last plunge")
@@ -998,16 +998,32 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             QSpinBox::down-button{width: 400px}
                             QSpinBox::up-button{width: 400px}
                             ''')
-
-        # create a label holding the positional data
-        self.current_pos_label = QLabel(self)
-        # note: this method of setting distance should be modified. takes a manually derived pos_home position
-        # value which indicates home, then subtracts it from the current position read by the encoder
-        self.current_pos_label.setText("Home to initialize position collection.")  # If inaccurate, home,
-        # press E-STOP, unpress, then restart program.
-        self.current_pos_label.setMaximumSize(300, 100)
-        self.current_pos_label.setFont(QFont('Munhwa Gothic', 20))
-        self.current_pos_label.setWordWrap(True)
+        self.homeButton = QPushButton(self)
+        self.homeButton.setFixedSize(300, 100)
+        self.homeButton.setFont(QFont('Munhwa Gothic', 20))
+        self.homeButton.setText("HOME")
+        self.homeButton.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #2E8B57; border-radius : 150px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #1e5e3a; border-radius : 150px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
+        # # create a label holding the positional data
+        # self.current_pos_label = QLabel(self)
+        # # note: this method of setting distance should be modified. takes a manually derived pos_home position
+        # # value which indicates home, then subtracts it from the current position read by the encoder
+        # self.current_pos_label.setText("Home to initialize position collection.")  # If inaccurate, home,
+        # # press E-STOP, unpress, then restart program.
+        # self.current_pos_label.setMaximumSize(300, 100)
+        # self.current_pos_label.setFont(QFont('Munhwa Gothic', 20))
+        # self.current_pos_label.setWordWrap(True)
 
         # connect buttons to associated functions
         # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
@@ -1015,7 +1031,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.upNudge.pressed.connect(Dispenser_Axis.Dispenser_up_func)
         self.stopButton.clicked.connect(Dispenser_Axis.Dispenser_stop_func)
         self.downNudge.pressed.connect(Dispenser_Axis.Dispenser_down_func)
-
+        self.homeButton.pressed.connect(motor.home)  # connect the button the operation function
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
@@ -1038,7 +1054,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.downNudge)
         vbox.addWidget(self.nudge_spin_label)
         vbox.addWidget(self.nudge_spinbox)
-        vbox.addWidget(self.current_pos_label)
+        vbox.addWidget(self.homeButton)
         # set alignment flags
         vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         # set spacing between widgets
@@ -1110,18 +1126,18 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.temp_h_box = QHBoxLayout()
 
         self.instant_temp_button = QPushButton(self)
-        self.instant_temp_button.setText("🤒")
-        self.instant_temp_button.pressed.connect(ni.getT)
+        self.instant_temp_button.setText("HIGH")
+        self.instant_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', True))
         self.temp_h_box.addWidget(self.instant_temp_button)
 
         self.instant_temp_label = QLabel("")
-        self.instant_temp_label.setText("Read Temperature")
+        self.instant_temp_label.setText("Motor Power")
         self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
         self.temp_h_box.addWidget(self.instant_temp_label)
 
         self.profile_temp_button = QPushButton(self)
-        self.profile_temp_button.setText("🤒📈")
-        self.profile_temp_button.pressed.connect(ni.collect_temp_profile)
+        self.profile_temp_button.setText("LOW")
+        self.profile_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', False))
         self.temp_h_box.addWidget(self.profile_temp_button)
 
         self.temp_h_group_box = QGroupBox()
@@ -1147,7 +1163,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # purpose: create widgets for plunge settings/control options
     # parameters: self
     # return: GroupBox
-    def setupBox2(self):
+    def DispensersetupBox2(self):
         groupBox = QGroupBox("Vacuum Controls")  # create a GroupBox
 
         # create label and spinbox for plunge vac time - allows for vacuum to turn on prior to plunge
@@ -1467,63 +1483,63 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
     # # endregion nudgeBox_and_func
 
-    # # region control_panel
-    # # noinspection PyUnresolvedReferences
-    # def controlBox(self):
-    #     groupBox = QGroupBox("Controls")  # create a GroupBox
+    # region control_panel
+    # noinspection PyUnresolvedReferences
+    def controlBox(self):
+        groupBox = QGroupBox("Controls")  # create a GroupBox
 
-    #     self.brakeButton = QCheckBox(self)
-    #     self.brakeButton.setText("BRAKE TOGGLE")
-    #     self.brakeButton.setFont(QFont('Munhwa Gothic', 30))
-    #     self.brakeButton.setStyleSheet("QCheckBox::indicator"
-    #                                "{"
-    #                                "width : 70px;"
-    #                                "height : 70px;"
-    #                                "}")
-    #     self.brakeButton.stateChanged.connect(lambda: stm.brake_set(self.brakeButton.isChecked()))
+        self.brakeButton = QCheckBox(self)
+        self.brakeButton.setText("BRAKE TOGGLE")
+        self.brakeButton.setFont(QFont('Munhwa Gothic', 30))
+        self.brakeButton.setStyleSheet("QCheckBox::indicator"
+                                   "{"
+                                   "width : 70px;"
+                                   "height : 70px;"
+                                   "}")
+        self.brakeButton.stateChanged.connect(lambda: stm.brake_set(self.brakeButton.isChecked()))
 
-    #     self.tempButton = QCheckBox(self)
-    #     self.tempButton.setText("TEMP TOGGLE")
-    #     self.tempButton.setFont(QFont('Munhwa Gothic', 30))
-    #     self.tempButton.setStyleSheet("QCheckBox::indicator"
-    #                                "{"
-    #                                "width : 70px;"
-    #                                "height : 70px;"
-    #                                "}")
-    #     self.tempButton.stateChanged.connect(self.tempToggle)
+        self.tempButton = QCheckBox(self)
+        self.tempButton.setText("TEMP TOGGLE")
+        self.tempButton.setFont(QFont('Munhwa Gothic', 30))
+        self.tempButton.setStyleSheet("QCheckBox::indicator"
+                                   "{"
+                                   "width : 70px;"
+                                   "height : 70px;"
+                                   "}")
+        self.tempButton.stateChanged.connect(self.tempToggle)
 
-    #     self.resetButton = QPushButton(self)
-    #     self.resetButton.setText("Reset stm")
-    #     self.resetButton.pressed.connect(stm.reset)
+        self.resetButton = QPushButton(self)
+        self.resetButton.setText("Reset stm")
+        self.resetButton.pressed.connect(stm.reset)
 
-    #     self.brakeBox = QSpinBox(self)
-    #     self.brakeBox.setMaximum(16000)  # max nudge value
-    #     self.brakeBox.setMinimum(1)  # min nudge value
-    #     self.brakeBox.setValue(13600)  # default value
-    #     self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
+        self.brakeBox = QSpinBox(self)
+        self.brakeBox.setMaximum(16000)  # max nudge value
+        self.brakeBox.setMinimum(1)  # min nudge value
+        self.brakeBox.setValue(13600)  # default value
+        self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
 
-    #     self.brakeBox.setFont(QFont('Munhwa Gothic', 40))
-    #     self.brakeBox.setStyleSheet('''
-    #                                 QSpinBox::down-button{width: 400px}
-    #                                 QSpinBox::up-button{width: 400px}
-    #                                 ''')
+        self.brakeBox.setFont(QFont('Munhwa Gothic', 40))
+        self.brakeBox.setStyleSheet('''
+                                    QSpinBox::down-button{width: 400px}
+                                    QSpinBox::up-button{width: 400px}
+                                    ''')
 
-    #     vbox = QGridLayout()
+        vbox = QGridLayout()
 
-    #     # column 1
-    #     vbox.addWidget(self.brakeButton, 0, 0)
-    #     vbox.addWidget(self.tempButton, 1, 0)
-    #     vbox.addWidget(self.resetButton, 2, 0)
+        # column 1
+        vbox.addWidget(self.brakeButton, 0, 0)
+        vbox.addWidget(self.tempButton, 1, 0)
+        vbox.addWidget(self.resetButton, 2, 0)
 
-    #     # column 2
-    #     vbox.addWidget(self.brakeBox, 1, 1)
+        # column 2
+        vbox.addWidget(self.brakeBox, 1, 1)
 
-    #     # set alignment, spacing, and assign layout to groupBox
-    #     vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
-    #     vbox.setSpacing(10)
+        # set alignment, spacing, and assign layout to groupBox
+        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+        vbox.setSpacing(10)
 
-    #     groupBox.setLayout(vbox)
-    #     return groupBox
+        groupBox.setLayout(vbox)
+        return groupBox
 
     def plunge_config(self):
         groupBox = QGroupBox("Configuration")  # create GroupBox to hold QWidgets
