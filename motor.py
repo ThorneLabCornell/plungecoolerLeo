@@ -412,7 +412,7 @@ def plunge():
 # purpose: closes maxon controller & ends program
 # parameters: none
 # return: none
-def close_device():
+def close_device(keyHandle):
     epos.VCS_SetDisableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
     epos.VCS_CloseDevice(keyHandle, byref(pErrorCode))  # close device
     print("Device closed")

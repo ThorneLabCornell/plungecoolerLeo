@@ -1293,7 +1293,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
 def closeGUI():
     print("Force exiting application")
-    ni.ni_set('vacuum',            False)
+    ni.ni_set('vacuum',            True)
     ni.ni_set('heater',            False)
     ni.ni_set('heater_controller', False)
     ni.ni_set('light',             False)

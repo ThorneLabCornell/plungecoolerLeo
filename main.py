@@ -19,7 +19,8 @@ def start_app():
     GUI.begin()
     # we only get to this point once gui closes
     # when closed properly via x settings, reset all components that may have been on
-    ni.ni_set('vacuum', False)
+    ni.ni_set('vacuum', True)
+    print("here")
     ni.ni_set('heater', True)
     ni.ni_set('heater_controller', True)
     #ni.ni_set('A_motor_power', True)
@@ -40,6 +41,11 @@ if __name__ == '__main__':
         print("Starting application...")
         start_app()
         # only get here if app is closed gracefully (right click)
+        ni.ni_set('vacuum', True)#set vacuum to be closed after end
+        ni.ni_set('heater', False)
+        ni.ni_set('heater_controller', False)
+        #ni.ni_set('A_motor_power', False)
+        ni.ni_set('light', False)
         motor.close()
         GUI.closeGUI()
 
