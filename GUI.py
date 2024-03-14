@@ -176,8 +176,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
 
         self.timer_button = QPushButton()
-        self.timer_button.setText("Show timer")
-        self.timer_button.pressed.connect(self.open_timer_box)
+        self.timer_button.setText("Reset STM")
+        #self.timer_button.pressed.connect(self.open_timer_box)
+        self.timer_button.pressed.connect(stm.reset)
 
         self.save_button = QPushButton()
         self.save_button.setText("Save last plunge")
