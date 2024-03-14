@@ -47,3 +47,6 @@ true_ln2_time = 0
 
 pos_home_raw = 38000 # TODO: fully deprecate this. it no longer aligns with reality but some code references it
 
+#dispenser delay time (s)
+# actual dispenser_delay=0.004079345035 per drop (1ms delay from each drop)
+dispenser_delay=0.01 #delay by 10ms 
