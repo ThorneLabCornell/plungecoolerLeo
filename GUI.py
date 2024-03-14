@@ -847,7 +847,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 background-color: gray;
                             }
                             ''')
-        self.plungeButton.pressed.connect(motor.plunge)  # TODO: tie button to plunging operation + dispense function (need to implement)
+        self.plungeButton.pressed.connect(Dispenser_Axis.Dispense_Plunge)  # TODO: tie button to plunging operation + dispense function (need to implement)
 
 
         self.timer_button = QPushButton()

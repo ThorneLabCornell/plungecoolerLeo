@@ -5,8 +5,10 @@ import ni
 import threading
 import motor
 import ni
-
+from ctypes import *
 # Load library
+# EPOS Library Path for commands - modify this if moving to a new computer
+path = 'C:\\Program Files (x86)\\maxon motor ag\\EPOS IDX\\EPOS2\\04 Programming\\Windows DLL\\LabVIEW\\maxon EPOS\\Resources\EposCmd64.dll'
 cdll.LoadLibrary(path)
 epos = CDLL(path)
 
@@ -80,11 +82,11 @@ def Dispense_Plunge():
     ni.drop_dispense()
     Dispense_start = timer()
     while True:  # hold loop until time is reached, then plunge
-        if timer() - Dispense_start >= globs.dispenser_delay
+        if timer() - Dispense_start >= globs.dispenser_delay:
             break
     print("pressseeed dispense and plunge")
-    print(abs(get_position()))
-    if abs(get_position()) > 50: # outside bounds of normal plunge condition, not homere properly
+    print(abs(motor.get_position()))
+    if abs(motor.get_position()) > 50: # outside bounds of normal plunge condition, not homere properly
         print("incorrect homing")
         return
     print("forward")
@@ -146,7 +148,7 @@ def Dispense_Plunge():
         ni.ni_set('vacuum', False)  # turn on vacuum
         while True:  # hold loop until time is reached, then plunge
             if timer() - start >= wait_time-globs.dispenser_delay or timer() - Dispense_start >= wait_time-globs.dispenser_delay:
-                epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
+                epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
                 motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
                 break
         ni.ni_set('vacuum', True)  # turn off vacuum following plunge
@@ -163,7 +165,7 @@ def Dispense_Plunge():
         # while timer() - tempcollect < 0.5:  # read initial temperature for 1s
         #     plungeTemp.append(read_temperature())
         #     plunge_temp_time.append(timer() - temp_timer)
-        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
+        epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
         motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
 
     tempcollect = timer()
@@ -173,7 +175,7 @@ def Dispense_Plunge():
 
     globs.gui.graphTempPos.plot(globs.plunge_temp_time, globs.plungeTemp)  # this will repost the data after plunge
 
-    value_n = (-1 * (get_position()-globs.pos_home_raw) * globs.leadscrew_inc / globs.encoder_pulse_num)  # approximate updated position
+    value_n = (-1 * (motor.get_position()-globs.pos_home_raw) * globs.leadscrew_inc / globs.encoder_pulse_num)  # approximate updated position
     globs.gui.current_pos_label.setText(str(value_n))  # update label with position
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
     globs.gui.graphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData], [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
