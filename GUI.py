@@ -1097,23 +1097,33 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                "width : 70px;"
                                "height : 70px;"
                                "}")
-
+        self.actuator = QCheckBox(self)
+        self.actuator.setText("Actuator")
+        self.actuator.setFont(QFont('Munhwa Gothic', 30))
+        self.actuator.setStyleSheet("QCheckBox::indicator"
+                               "{"
+                               "width : 70px;"
+                               "height : 70px;"
+                               "}")
         self.spacerlabel = QLabel("")
-        self.spacerlabel.setFont(QFont('Munhwa Fothic', 137))
+        self.spacerlabel.setFont(QFont('Munhwa Fothic', 67))
 
         # connect checkboxes to functions - update when checkbox value is changed
         self.h_controller_check.stateChanged.connect(self.guiheater_controller)
         self.h_power.stateChanged.connect(self.guiheater_power)
         self.vac.stateChanged.connect(lambda: ni.ni_set('vacuum',  (not self.vac.isChecked())))
+        self.actuator.stateChanged.connect(ni.pneumatic_actuator_push)
 
         # set enable state of checkboxes
         self.h_controller_check.setEnabled(True)
         self.h_power.setEnabled(True)
         self.vac.setEnabled(True)
+        self.actuator.setEnabled(True)
         #Initially have all checkboxes to be true since it was initialized in main function
         self.h_controller_check.setChecked(True)
         self.h_power.setChecked(True)
         self.vac.setChecked(False)
+        self.actuator.setChecked(False)
         # create graph widget to read temperature; updates in plunge stage
         self.graphTempPos = pg.PlotWidget(self)
         self.graphTempPos.setBackground('black')
@@ -1149,6 +1159,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.h_controller_check)
         vbox.addWidget(self.h_power)
         vbox.addWidget(self.vac)
+        vbox.addWidget(self.actuator)
 
         vbox.addWidget(self.graphTempPos)
         vbox.addWidget(self.temp_h_group_box)

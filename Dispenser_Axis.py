@@ -84,6 +84,13 @@ def Dispense_Plunge():
     while True:  # hold loop until time is reached, then plunge
         if timer() - Dispense_start >= globs.dispenser_delay:
             break
+    if globs.gui.actuator.isChecked():
+        globs.dispenser_delay+=0.05#delay by another 50ms
+        ni.pneumatic_actuator_pull()
+        while True:  # hold loop until time is reached, then plunge
+        if timer() - Dispense_start >= globs.dispenser_delay:
+            break
+
     print("pressseeed dispense and plunge")
     print(abs(motor.get_position()))
     if abs(motor.get_position()) > 50: # outside bounds of normal plunge condition, not homere properly

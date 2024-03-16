@@ -30,7 +30,8 @@ PINOUT = { # too lazy to implement and enum right now
     'Dispenser_en':                 DEVICE_NAME + "/port2/line5",#40
     'Dispenser_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal (not needed for dispenser)
     #'Dispenser_motor_power':        DEVICE_NAME + "/port0/line5",
-    'microdrop_trig':               DEVICE_NAME+ "/port1/line6"#port 5 on daq
+    'microdrop_trig':               DEVICE_NAME+ "/port1/line6",#port 5 on daq
+    'actuator_trig':               DEVICE_NAME+ "/port0/line1",#port 17 on daq
 }
 
 
@@ -220,4 +221,10 @@ def drop_dispense():
     ni_set('microdrop_trig', False) 
     ni_set('microdrop_trig', True)
     ni_set('microdrop_trig', False)  
+
+def pneumatic_actuator_pull():
+    ni_set('actuator_trig', True) 
+
+def pneumatic_actuator_push():
+    ni_set('actuator_trig', False) 
 
