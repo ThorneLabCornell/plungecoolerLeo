@@ -54,7 +54,7 @@ def enable():
 
 
 def close():
-    close_device(keyHandle)
+    close_device()
 
 
 # function: get_position

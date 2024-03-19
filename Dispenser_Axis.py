@@ -34,9 +34,10 @@ def Dispenser_start_func(self):
 # parameters: self
 # return: none
 def Dispenser_up_func():
+    print("test")
     new_pos = globs.Dispenser_position - int(globs.gui.nudge_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
     Dispenser_move(globs.A_UP, int(globs.gui.nudge_spinbox.value()))#A_UP is TRUE
-    globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
+    # globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
 
 
 # function: Dispenser_stop_func
@@ -85,11 +86,11 @@ def Dispense_Plunge():
         if timer() - Dispense_start >= globs.dispenser_delay:
             break
     if globs.gui.actuator.isChecked():
-        globs.dispenser_delay+=0.05#delay by another 50ms
-        ni.pneumatic_actuator_pull()
+        globs.dispenser_delay+=0.49#delay by another 50ms
+        ni.pneumatic_actuator_push()
         while True:  # hold loop until time is reached, then plunge
-        if timer() - Dispense_start >= globs.dispenser_delay:
-            break
+            if timer() - Dispense_start >= globs.dispenser_delay:
+                break
 
     print("pressseeed dispense and plunge")
     print(abs(motor.get_position()))
@@ -115,7 +116,7 @@ def Dispense_Plunge():
     print(globs.gui.plungepause.isChecked())
     vac_time=globs.gui.vac_on_time.value()
     if globs.gui.plungepause.isChecked():
-        epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # enable device
+        #epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # enable device
         pp_wait_time = globs.gui.pp_time_box.value() #substrate by deposition time
         # TODO: characterize how much extra t delay there is at beginning of PPP. might not be a huge deal
         if globs.gui.plungevac.isChecked() and vac_time > pp_wait_time:
@@ -155,7 +156,7 @@ def Dispense_Plunge():
         ni.ni_set('vacuum', False)  # turn on vacuum
         while True:  # hold loop until time is reached, then plunge
             if timer() - start >= wait_time-globs.dispenser_delay or timer() - Dispense_start >= wait_time-globs.dispenser_delay:
-                epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
+                #epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
                 motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
                 break
         ni.ni_set('vacuum', True)  # turn off vacuum following plunge

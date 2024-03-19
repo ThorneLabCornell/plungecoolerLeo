@@ -179,8 +179,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
 
         self.timer_button = QPushButton()
-        self.timer_button.setText("Show timer")
-        self.timer_button.pressed.connect(self.open_timer_box)
+        self.timer_button.setText("Reset STM")
+        self.timer_button.pressed.connect(ni.reset_stm)
 
         self.save_button = QPushButton()
         self.save_button.setText("Save last plunge")
@@ -988,7 +988,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
         self.nudge_spinbox = QDoubleSpinBox(self)
-        self.nudge_spinbox.setMaximum(20)  # max nudge value
+        self.nudge_spinbox.setMaximum(2000)  # max nudge value
         self.nudge_spinbox.setMinimum(0.1)  # min nudge value
         self.nudge_spinbox.setValue(2)  # default value
         self.nudge_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
@@ -1112,7 +1112,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.h_controller_check.stateChanged.connect(self.guiheater_controller)
         self.h_power.stateChanged.connect(self.guiheater_power)
         self.vac.stateChanged.connect(lambda: ni.ni_set('vacuum',  (not self.vac.isChecked())))
-        self.actuator.stateChanged.connect(ni.pneumatic_actuator_push)
+        self.actuator.stateChanged.connect(lambda: ni.ni_set('actuator_trig',  (self.actuator.isChecked())))
 
         # set enable state of checkboxes
         self.h_controller_check.setEnabled(True)
@@ -1137,17 +1137,19 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         self.instant_temp_button = QPushButton(self)
         self.instant_temp_button.setText("HIGH")
-        self.instant_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', True))
+        #self.instant_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', True))
+        self.instant_temp_button.pressed.connect(ni.pneumatic_actuator_pull)
         self.temp_h_box.addWidget(self.instant_temp_button)
 
         self.instant_temp_label = QLabel("")
-        self.instant_temp_label.setText("Motor Power")
+        self.instant_temp_label.setText("Actuate")
         self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
         self.temp_h_box.addWidget(self.instant_temp_label)
 
         self.profile_temp_button = QPushButton(self)
         self.profile_temp_button.setText("LOW")
-        self.profile_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', False))
+        #self.profile_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', False))
+        self.profile_temp_button.pressed.connect(ni.pneumatic_actuator_push)
         self.temp_h_box.addWidget(self.profile_temp_button)
 
         self.temp_h_group_box = QGroupBox()
@@ -2036,7 +2038,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
 def closeGUI():
     print("Force exiting application")
-    ni.ni_set('vacuum',            False)
+    ni.ni_set('vacuum',            True)
     ni.ni_set('heater',            False)
     ni.ni_set('heater_controller', False)
     ni.ni_set('light',             False)

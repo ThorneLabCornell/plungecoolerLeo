@@ -19,12 +19,13 @@ def start_app():
     GUI.begin()
     # we only get to this point once gui closes
     # when closed properly via x settings, reset all components that may have been on
-    ni.ni_set('vacuum', False)
+    #ni.ni_set('vacuum', False)
     ni.ni_set('heater', True)
     ni.ni_set('heater_controller', True)
     ni.ni_set('A_motor_power', True)
     ni.ni_set('light', False)
     ni.ni_set('stm_rst', True)
+    ni.ni_set('actuator_trig', True)
 
     #motor.close() #modified to test by gary
 

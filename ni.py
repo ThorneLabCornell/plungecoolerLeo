@@ -31,7 +31,8 @@ PINOUT = { # too lazy to implement and enum right now
     'Dispenser_home':               DEVICE_NAME + "/port2/line0",#A axis limit switch signal (not needed for dispenser)
     #'Dispenser_motor_power':        DEVICE_NAME + "/port0/line5",
     'microdrop_trig':               DEVICE_NAME+ "/port1/line6",#port 5 on daq
-    'actuator_trig':               DEVICE_NAME+ "/port0/line1",#port 17 on daq
+    #'actuator_trig':               DEVICE_NAME+ "/port0/line1",#port 17 on daq (12v power trig)
+    'actuator_trig':               DEVICE_NAME+ "/port2/line3"
 }
 
 
@@ -205,6 +206,7 @@ def Dispenser_home_func(self):
     step_task.stop()
 
 def Dispenser_move_thread(direc, steps):
+    print("entered")
     ni_set('A_motor_power', True) #give power to stepper motor
     ni_set('Dispenser_dir', direc) #direc (True/False) define turn direction
     with nidaqmx.Task() as step_task:
