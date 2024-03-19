@@ -37,7 +37,7 @@ def Dispenser_up_func():
     print("test")
     new_pos = globs.Dispenser_position - int(globs.gui.nudge_spinbox.value()) #A_spinbox.value() is what user inputs in GUI
     Dispenser_move(globs.A_UP, int(globs.gui.nudge_spinbox.value()))#A_UP is TRUE
-    # globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
+    globs.gui.current_pos_label.setText(str(new_pos))  # update position label in GUI
 
 
 # function: Dispenser_stop_func
@@ -80,21 +80,21 @@ def Dispenser_move(direc, steps):
     moveT.start()#invokes A.movethread to be ran in parallel to current program (taking in inputs of direc and steps)
 
 def Dispense_Plunge():
-    ni.drop_dispense()
-    Dispense_start = timer()
-    while True:  # hold loop until time is reached, then plunge
-        if timer() - Dispense_start >= globs.dispenser_delay:
-            break
-    if globs.gui.actuator.isChecked():
-        globs.dispenser_delay+=0.49#delay by another 50ms
-        ni.pneumatic_actuator_push()
-        while True:  # hold loop until time is reached, then plunge
-            if timer() - Dispense_start >= globs.dispenser_delay:
-                break
-
+    # ni.drop_dispense()
+    # Dispense_start = timer()
+    # while True:  # hold loop until time is reached, then plunge
+    #     if timer() - Dispense_start >= globs.dispenser_delay:
+    #         break
+    # if globs.gui.actuator.isChecked():
+    #     globs.dispenser_delay+=0.49#delay by another 50ms
+    #     ni.pneumatic_actuator_push()
+    #     while True:  # hold loop until time is reached, then plunge
+    #         if timer() - Dispense_start >= globs.dispenser_delay:
+    #             break
+    vacTimer = timer()
     print("pressseeed dispense and plunge")
     print(abs(motor.get_position()))
-    if abs(motor.get_position()) > 50: # outside bounds of normal plunge condition, not homere properly
+    if abs(motor.get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
         print("incorrect homing")
         return
     print("forward")
@@ -105,6 +105,7 @@ def Dispense_Plunge():
     globs.plungeVelData=[]
     globs.plungeTemp.clear()
     globs.plunge_temp_time.clear()
+    pptimer = timer()
     globs.gui.graphVel.clear()  # clear graph widget
     globs.gui.graphVelPos.clear()
     globs.gui.graphTempPos.clear()
@@ -116,7 +117,7 @@ def Dispense_Plunge():
     print(globs.gui.plungepause.isChecked())
     vac_time=globs.gui.vac_on_time.value()
     if globs.gui.plungepause.isChecked():
-        #epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # enable device
+        epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # enable device
         pp_wait_time = globs.gui.pp_time_box.value() #substrate by deposition time
         # TODO: characterize how much extra t delay there is at beginning of PPP. might not be a huge deal
         if globs.gui.plungevac.isChecked() and vac_time > pp_wait_time:
@@ -125,26 +126,37 @@ def Dispense_Plunge():
             start = timer()
             ni.ni_set('vacuum', False)  # turn on vacuum
             while True:  # hold loop until time is reached, then plunge
-                if timer() - Dispense_start >= vac_time - pp_wait_time -globs.dispenser_delay:
+                if timer() - start >= vac_time - pp_wait_time -globs.dispenser_delay:
                     break
             globs.gui.vac_on_time.setEnabled(True)  # return previous settings to enable changes
             globs.gui.plungevac.setEnabled(True)
 
-        motor.move_nudge('down', globs.gui.plungepausedist.value())  # move to the distance
+        #motor.move_nudge('down', globs.gui.plungepausedist.value())  # move to the distance
 
         if globs.gui.plungevac.isChecked() and vac_time == pp_wait_time:
             ni.ni_set('vacuum', False)
-        pptimer = timer()  # start timer for plunge pause plunge
+        Dispense_start = timer()  # start timer for plunge pause plunge
+
+        ni.drop_dispense()
+        while True:  # hold loop until time is reached, then plunge
+            if timer() - Dispense_start >= globs.dispenser_delay:
+                break
+        if globs.gui.actuator.isChecked():
+            Actuate_start = timer()  # start timer for plunge pause plunge
+            ni.pneumatic_actuator_push()
+            while True:  # hold loop until time is reached, then plunge
+                if timer() - Actuate_start >= globs.actuator_delay:
+                    break
 
         vac_on = False
+        pptimer = timer()
         while True:  # hold in loop until pause time has been reached, then proceed to plunging stage
             if globs.gui.plungevac.isChecked() and ~vac_on and vac_time < pp_wait_time and (
-                    timer() - pptimer > globs.gui.vac_on_time.value()-globs.dispenser_delay):
+                    timer() - pptimer > vac_time):
                 ni.ni_set('vacuum', False)
                 vac_on = True
-            if timer() - pptimer > pp_wait_time-globs.dispenser_delay:
+            if timer() - pptimer > pp_wait_time:
                 break
-
         motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
         ni.ni_set('vacuum', True) #turn off vacuum
 
@@ -155,8 +167,19 @@ def Dispense_Plunge():
         start = timer()
         ni.ni_set('vacuum', False)  # turn on vacuum
         while True:  # hold loop until time is reached, then plunge
-            if timer() - start >= wait_time-globs.dispenser_delay or timer() - Dispense_start >= wait_time-globs.dispenser_delay:
-                #epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
+            if timer() - start >= wait_time or timer() - pptimer >= wait_time:
+                Dispense_start = timer()  # start timer for plunge pause plunge
+                ni.drop_dispense()
+                while True:  # hold loop until time is reached, then plunge
+                    if timer() - Dispense_start >= globs.dispenser_delay:
+                        break
+                if globs.gui.actuator.isChecked():
+                    Actuate_start = timer()  # start timer for plunge pause plunge
+                    ni.pneumatic_actuator_push()
+                    while True:  # hold loop until time is reached, then plunge
+                        if timer() - Actuate_start >= globs.actuator_delay:
+                            break
+                epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
                 motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
                 break
         ni.ni_set('vacuum', True)  # turn off vacuum following plunge
@@ -173,6 +196,17 @@ def Dispense_Plunge():
         # while timer() - tempcollect < 0.5:  # read initial temperature for 1s
         #     plungeTemp.append(read_temperature())
         #     plunge_temp_time.append(timer() - temp_timer)
+        ni.drop_dispense()
+        Dispense_start = timer()
+        while True:  # hold loop until time is reached, then plunge
+            if timer() - Dispense_start >= globs.dispenser_delay:
+                break
+        if globs.gui.actuator.isChecked():
+            globs.dispenser_delay += 0.49  # delay by another 50ms
+            ni.pneumatic_actuator_push()
+            while True:  # hold loop until time is reached, then plunge
+                if timer() - Dispense_start >= globs.dispenser_delay:
+                    break
         epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
         motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
 

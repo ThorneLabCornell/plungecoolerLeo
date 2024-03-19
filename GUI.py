@@ -352,10 +352,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
         #self.upNudge.setAutoRepeat(True)
-        self.upNudge.setEnabled(False)
+        self.upNudge.setEnabled(True)
         self.upNudge.setCheckable(True)
         #self.downNudge.setAutoRepeat(True)
-        self.downNudge.setEnabled(False)
+        self.downNudge.setEnabled(True)
         self.downNudge.setCheckable(True)
 
         # disable stop button

@@ -49,4 +49,5 @@ pos_home_raw = 38000 # TODO: fully deprecate this. it no longer aligns with real
 
 #dispenser delay time (s)
 # actual dispenser_delay=0.004079345035 per drop (1ms delay from each drop)
-dispenser_delay=0.01 #delay by 10ms 
+dispenser_delay=0.01 #delay by 10ms
+actuator_delay=0.1 #delay by 100ms
