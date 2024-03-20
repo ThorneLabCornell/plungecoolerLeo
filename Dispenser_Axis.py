@@ -141,21 +141,21 @@ def Dispense_Plunge():
         while True:  # hold loop until time is reached, then plunge
             if timer() - Dispense_start >= globs.dispenser_delay:
                 break
+        pptimer = timer()
         if globs.gui.actuator.isChecked():
             Actuate_start = timer()  # start timer for plunge pause plunge
             ni.pneumatic_actuator_push()
             while True:  # hold loop until time is reached, then plunge
                 if timer() - Actuate_start >= globs.actuator_delay:
                     break
-
         vac_on = False
-        pptimer = timer()
+        pause_timer=timer()
         while True:  # hold in loop until pause time has been reached, then proceed to plunging stage
             if globs.gui.plungevac.isChecked() and ~vac_on and vac_time < pp_wait_time and (
                     timer() - pptimer > vac_time):
                 ni.ni_set('vacuum', False)
                 vac_on = True
-            if timer() - pptimer > pp_wait_time:
+            if timer() - pptimer > pp_wait_time or (timer()-pause_timer>pp_wait_time-globs.actuator_delay and globs.gui.actuator.isChecked()):
                 break
         motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
         ni.ni_set('vacuum', True) #turn off vacuum
