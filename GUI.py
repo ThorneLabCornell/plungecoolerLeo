@@ -926,7 +926,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.upNudge = QPushButton(self)
         self.upNudge.setFixedSize(300, 100)
         self.upNudge.setFont(QFont('Calibri', 30))
-        self.upNudge.setText("↑")
+        self.upNudge.setText("Inward")
         self.upNudge.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #CC7722; border-radius : 20px;
@@ -965,7 +965,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.downNudge = QPushButton(self)
         self.downNudge.setFixedSize(300, 100)
         self.downNudge.setFont(QFont('Calibri', 30))
-        self.downNudge.setText("↓")
+        self.downNudge.setText("Outward")
         self.downNudge.setStyleSheet('QPushButton{color: white}')
         self.downNudge.setStyleSheet('''
                             QPushButton {
@@ -1028,9 +1028,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # connect buttons to associated functions
         # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
         self.startNudge.clicked.connect(Dispenser_Axis.Dispenser_start_func)
-        self.upNudge.pressed.connect(Dispenser_Axis.Dispenser_up_func)
+        self.upNudge.pressed.connect(Dispenser_Axis.Dispenser_down_func)
         self.stopButton.clicked.connect(Dispenser_Axis.Dispenser_stop_func)
-        self.downNudge.pressed.connect(Dispenser_Axis.Dispenser_down_func)
+        self.downNudge.pressed.connect(Dispenser_Axis.Dispenser_up_func)
         self.homeButton.pressed.connect(motor.home)  # connect the button the operation function
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
