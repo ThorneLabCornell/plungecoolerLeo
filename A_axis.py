@@ -19,6 +19,11 @@ def A_start_func(self):
     globs.gui.A_down.setEnabled(True)
     globs.gui.A_move_to.setEnabled(True)
 
+    globs.gui.AstartNudge.setEnabled(False)
+    globs.gui.AupNudge.setEnabled(True)
+    globs.gui.AstopButton.setEnabled(True)
+    globs.gui.AdownNudge.setEnabled(True)
+
 
 # function: A_up_func
 # purpose: nudges the carriage up
@@ -42,6 +47,11 @@ def A_stop_func(self):
     globs.gui.A_down.setEnabled(False)
     globs.gui.A_home.setEnabled(False)
     globs.gui.A_move_to.setEnabled(False)
+
+    globs.gui.AstartNudge.setEnabled(True)
+    globs.gui.AupNudge.setEnabled(False)
+    globs.gui.AstopButton.setEnabled(False)
+    globs.gui.AdownNudge.setEnabled(False)
 
 
 # function: downNudgeFunc

@@ -143,8 +143,9 @@ def Dispense_Plunge():
                 break
         pptimer = timer()
         if globs.gui.actuator.isChecked():
+            print("start actuating")
             Actuate_start = timer()  # start timer for plunge pause plunge
-            ni.pneumatic_actuator_push()
+            ni.ni_set('actuator_trig',True)
             while True:  # hold loop until time is reached, then plunge
                 if timer() - Actuate_start >= globs.actuator_delay:
                     break
@@ -175,7 +176,7 @@ def Dispense_Plunge():
                         break
                 if globs.gui.actuator.isChecked():
                     Actuate_start = timer()  # start timer for plunge pause plunge
-                    ni.pneumatic_actuator_push()
+                    ni.ni_set('actuator_trig',True)
                     while True:  # hold loop until time is reached, then plunge
                         if timer() - Actuate_start >= globs.actuator_delay:
                             break
@@ -202,14 +203,14 @@ def Dispense_Plunge():
             if timer() - Dispense_start >= globs.dispenser_delay:
                 break
         if globs.gui.actuator.isChecked():
-            globs.dispenser_delay += 0.49  # delay by another 50ms
-            ni.pneumatic_actuator_push()
+            Actuate_start = timer()  # start timer for plunge pause plunge
+            ni.ni_set('actuator_trig', True)
             while True:  # hold loop until time is reached, then plunge
-                if timer() - Dispense_start >= globs.dispenser_delay:
+                if timer() - Actuate_start >= globs.actuator_delay:
                     break
         epos.VCS_SetEnableState(motor.keyHandle, motor.nodeID, byref(motor.pErrorCode))  # disable device
         motor.move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
-
+    ni.ni_set('actuator_trig', False)
     tempcollect = timer()
     # while timer() - tempcollect < 1: # read concluding temperature for 1s
     #     plungeTemp.append(read_temperature())
@@ -221,3 +222,9 @@ def Dispense_Plunge():
     globs.gui.current_pos_label.setText(str(value_n))  # update label with position
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
     globs.gui.graphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData], [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
+    globs.gui.DispensergraphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in
+                                                        globs.plungePosData])  # plot collected data
+    globs.gui.DispensergraphVelPos.plot(
+        [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData],
+        [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])
+    # print(get_position())

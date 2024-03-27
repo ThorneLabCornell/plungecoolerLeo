@@ -74,13 +74,13 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.tab2 = self.ABox()
         self.tab3 = self.DispenserBox()
         self.tab4 = self.controlBox()
-        self.tab5 = self.panTiltBox()
+        # self.tab5 = self.panTiltBox()
         self.tab6 = self.plunge_config()
         self.tabs.addTab(self.tab1, 'Plunge')
         self.tabs.addTab(self.tab2, 'A Axis')
         self.tabs.addTab(self.tab3, 'Dispenser Axis')
         self.tabs.addTab(self.tab4, "Control Panel")
-        self.tabs.addTab(self.tab5, "Pan/Tilt")
+        # self.tabs.addTab(self.tab5, "Pan/Tilt")
         self.tabs.addTab(self.tab6, "Plunge Config")
         self.setCentralWidget(self.tabs)  # set the tab array to be the central widget
 
@@ -237,11 +237,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         groupBox = QGroupBox("Nudge")  # create GroupBox to hold QWidgets
 
         # create button to initiate nudge: this button will set device enable states and disable home/plunge buttons
-        self.startNudge = QPushButton(self)
-        self.startNudge.setFixedSize(300, 300)
-        self.startNudge.setFont(QFont('Munhwa Gothic', 40))
-        self.startNudge.setText("NUDGE")
-        self.startNudge.setStyleSheet('''
+        self.PlungerstartNudge = QPushButton(self)
+        self.PlungerstartNudge.setFixedSize(300, 300)
+        self.PlungerstartNudge.setFont(QFont('Munhwa Gothic', 40))
+        self.PlungerstartNudge.setText("NUDGE")
+        self.PlungerstartNudge.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #4682B4; border-radius : 150px;
                                 border : 0px solid black; font-weight : bold;
@@ -256,11 +256,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
 
         # create button to nudge upwards
-        self.upNudge = QPushButton(self)
-        self.upNudge.setFixedSize(300, 100)
-        self.upNudge.setFont(QFont('Calibri', 30))
-        self.upNudge.setText("↑")
-        self.upNudge.setStyleSheet('''
+        self.PlungerupNudge = QPushButton(self)
+        self.PlungerupNudge.setFixedSize(300, 100)
+        self.PlungerupNudge.setFont(QFont('Calibri', 30))
+        self.PlungerupNudge.setText("↑")
+        self.PlungerupNudge.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #CC7722; border-radius : 20px;
                                 border : 0px solid black; font-weight : bold;
@@ -275,11 +275,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
 
         # create button to stop nudge process to enable plunge/home capabilities
-        self.stopButton = QPushButton(self)
-        self.stopButton.setFixedSize(300, 100)
-        self.stopButton.setFont(QFont('Munhwa Gothic', 30))
-        self.stopButton.setText("STOP")
-        self.stopButton.setStyleSheet('''
+        self.PlungerstopButton = QPushButton(self)
+        self.PlungerstopButton.setFixedSize(300, 100)
+        self.PlungerstopButton.setFont(QFont('Munhwa Gothic', 30))
+        self.PlungerstopButton.setText("STOP")
+        self.PlungerstopButton.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #AA4A44; border-radius : 20px;
                                 border : 0px solid black; font-weight : bold;
@@ -295,12 +295,12 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
 
         # create button to nudge downwards
-        self.downNudge = QPushButton(self)
-        self.downNudge.setFixedSize(300, 100)
-        self.downNudge.setFont(QFont('Calibri', 30))
-        self.downNudge.setText("↓")
-        self.downNudge.setStyleSheet('QPushButton{color: white}')
-        self.downNudge.setStyleSheet('''
+        self.PlungerdownNudge = QPushButton(self)
+        self.PlungerdownNudge.setFixedSize(300, 100)
+        self.PlungerdownNudge.setFont(QFont('Calibri', 30))
+        self.PlungerdownNudge.setText("↓")
+        self.PlungerdownNudge.setStyleSheet('QPushButton{color: white}')
+        self.PlungerdownNudge.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #CC7722; border-radius : 20px;
                                 border : 0px solid black; font-weight : bold;
@@ -315,19 +315,19 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             ''')
 
         # create label to indicate where to input nudge distance
-        self.nudge_spin_label = QLabel(self)
-        self.nudge_spin_label.setText("Set nudge distance")
-        self.nudge_spin_label.setFont(QFont('Munhwa Gothic', 20))
+        self.Plungernudge_spin_label = QLabel(self)
+        self.Plungernudge_spin_label.setText("Set nudge distance")
+        self.Plungernudge_spin_label.setFont(QFont('Munhwa Gothic', 20))
 
         # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
-        self.nudge_spinbox = QDoubleSpinBox(self)
-        self.nudge_spinbox.setMaximum(20)  # max nudge value
-        self.nudge_spinbox.setMinimum(0.1)  # min nudge value
-        self.nudge_spinbox.setValue(2)  # default value
-        self.nudge_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
-        self.nudge_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
-        self.nudge_spinbox.setFont(QFont('Munhwa Gothic', 40))
-        self.nudge_spinbox.setStyleSheet('''
+        self.Plungernudge_spinbox = QDoubleSpinBox(self)
+        self.Plungernudge_spinbox.setMaximum(20)  # max nudge value
+        self.Plungernudge_spinbox.setMinimum(0.1)  # min nudge value
+        self.Plungernudge_spinbox.setValue(2)  # default value
+        self.Plungernudge_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
+        self.Plungernudge_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.Plungernudge_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.Plungernudge_spinbox.setStyleSheet('''
                             QSpinBox::down-button{width: 400px}
                             QSpinBox::up-button{width: 400px}
                             ''')
@@ -344,32 +344,32 @@ class MainWindow(QMainWindow):  # subclassing Qt class
 
         # connect buttons to associated functions
         # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
-        self.startNudge.clicked.connect(self.nudgeBegin)
-        self.upNudge.pressed.connect(motor.upNudgeFunc)
-        self.stopButton.clicked.connect(self.stopNudge)
-        self.downNudge.pressed.connect(motor.downNudgeFunc)
+        self.PlungerstartNudge.clicked.connect(self.nudgeBegin)
+        self.PlungerupNudge.pressed.connect(motor.upNudgeFunc)
+        self.PlungerstopButton.clicked.connect(self.stopNudge)
+        self.PlungerdownNudge.pressed.connect(motor.downNudgeFunc)
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
         #self.upNudge.setAutoRepeat(True)
-        self.upNudge.setEnabled(True)
-        self.upNudge.setCheckable(True)
+        self.PlungerupNudge.setEnabled(False)
+        self.PlungerupNudge.setCheckable(True)
         #self.downNudge.setAutoRepeat(True)
-        self.downNudge.setEnabled(True)
-        self.downNudge.setCheckable(True)
+        self.PlungerdownNudge.setEnabled(False)
+        self.PlungerdownNudge.setCheckable(True)
 
         # disable stop button
-        self.stopButton.setEnabled(False)
+        self.PlungerstopButton.setEnabled(False)
 
         # create vertical box layout
         vbox = QVBoxLayout()
         # add widgets to the box
-        vbox.addWidget(self.startNudge)
-        vbox.addWidget(self.upNudge)
-        vbox.addWidget(self.stopButton)
-        vbox.addWidget(self.downNudge)
-        vbox.addWidget(self.nudge_spin_label)
-        vbox.addWidget(self.nudge_spinbox)
+        vbox.addWidget(self.PlungerstartNudge)
+        vbox.addWidget(self.PlungerupNudge)
+        vbox.addWidget(self.PlungerstopButton)
+        vbox.addWidget(self.PlungerdownNudge)
+        vbox.addWidget(self.Plungernudge_spin_label)
+        vbox.addWidget(self.Plungernudge_spinbox)
         vbox.addWidget(self.current_pos_label)
         # set alignment flags
         vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -387,10 +387,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # disable plunge, home, startNudge buttons, enable control buttons and stop nudge buttons
         self.homeButton.setEnabled(False)
         self.plungeButton.setEnabled(False)
-        self.startNudge.setEnabled(False)
-        self.upNudge.setEnabled(True)
-        self.stopButton.setEnabled(True)
-        self.downNudge.setEnabled(True)
+        self.PlungerstartNudge.setEnabled(False)
+        self.PlungerupNudge.setEnabled(True)
+        self.PlungerstopButton.setEnabled(True)
+        self.PlungerdownNudge.setEnabled(True)
         # enable device - this will hold the device where it is, but can also be hard on the motor
 
     # function: stopNudge
@@ -399,140 +399,140 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # return: none
     def stopNudge(self):
         # reset settings to enable plunging and disable nudging
-        self.startNudge.setEnabled(True)
         self.homeButton.setEnabled(True)
         self.plungeButton.setEnabled(True)
-        self.upNudge.setEnabled(False)
-        self.stopButton.setEnabled(False)
-        self.downNudge.setEnabled(False)
+        self.PlungerupNudge.setEnabled(False)
+        self.PlungerstopButton.setEnabled(False)
+        self.PlungerdownNudge.setEnabled(False)
+        self.PlungerstartNudge.setEnabled(True)
 
         # reinitialize device and set it to disabled
         motor.clear_errors()
 
     # endregion nudgeBox_and_func
 
-    # region panTilt
-    def panTiltBox(self):
-        groupBox = QGroupBox("Pan/Tilt Control")  # create a GroupBox
-
-        self.tiltDown = QPushButton(self)
-        self.tiltDown.setFixedSize(200, 200)
-        self.tiltDown.setFont(QFont('Calibri', 30))
-        self.tiltDown.setText("↓")
-        self.tiltDown.setStyleSheet('QPushButton{color: white}')
-        self.tiltDown.setStyleSheet('''
-                        QPushButton {
-                            color: white; background-color : #CC7722; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;
-                        }
-                        QPushButton:pressed {
-                            color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
-                        }
-                        QPushButton:disabled {
-                            background-color: gray;
-                        }
-                        ''')
-
-        self.tiltUp = QPushButton(self)
-        self.tiltUp.setFixedSize(200, 200)
-        self.tiltUp.setFont(QFont('Calibri', 30))
-        self.tiltUp.setText("↑")
-        self.tiltUp.setStyleSheet('QPushButton{color: white}')
-        self.tiltUp.setStyleSheet('''
-                        QPushButton {
-                            color: white; background-color : #CC7722; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;
-                        }
-                        QPushButton:pressed {
-                            color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
-                        }
-                        QPushButton:disabled {
-                            background-color: gray;
-                        }
-                        ''')
-        self.panLeft = QPushButton(self)
-        self.panLeft.setFixedSize(200, 200)
-        self.panLeft.setFont(QFont('Calibri', 30))
-        self.panLeft.setText("←")
-        self.panLeft.setStyleSheet('QPushButton{color: white}')
-        self.panLeft.setStyleSheet('''
-                        QPushButton {
-                            color: white; background-color : #CC7722; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;
-                        }
-                        QPushButton:pressed {
-                            color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
-                        }
-                        QPushButton:disabled {
-                            background-color: gray;
-                        }
-                        ''')
-
-        self.panRight = QPushButton(self)
-        self.panRight.setFixedSize(200, 200)
-        self.panRight.setFont(QFont('Calibri', 30))
-        self.panRight.setText("→")
-        self.panRight.setStyleSheet('QPushButton{color: white}')
-        self.panRight.setStyleSheet('''
-                        QPushButton {
-                            color: white; background-color : #CC7722; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;
-                        }
-                        QPushButton:pressed {
-                            color: white; background-color : #99520c; border-radius : 20px;
-                            border : 0px solid black; font-weight : bold;                               
-                        }
-                        QPushButton:disabled {
-                            background-color: gray;
-                        }
-                        ''')
-
-        self.pan_spinbox = QDoubleSpinBox(self)
-        self.pan_spinbox.setMaximum(10)  # max nudge value
-        self.pan_spinbox.setMinimum(0.1)  # min nudge value
-        self.pan_spinbox.setValue(2)  # default value
-        self.pan_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
-        self.pan_spinbox.setFont(QFont('Munhwa Gothic', 40))
-        self.pan_spinbox.setStyleSheet('''
-                                    QSpinBox::down-button{width: 400px}
-                                    QSpinBox::up-button{width: 400px}
-                                    ''')
-
-        self.tilt_spinbox = QDoubleSpinBox(self)
-        self.tilt_spinbox.setMaximum(10)  # max nudge value
-        self.tilt_spinbox.setMinimum(0.1)  # min nudge value
-        self.tilt_spinbox.setValue(2)  # default value
-        self.tilt_spinbox.setSingleStep(0.05)  # incremental/decremental value when arrows are pressed
-        self.tilt_spinbox.setFont(QFont('Munhwa Gothic', 40))
-        self.tilt_spinbox.setStyleSheet('''
-                                    QSpinBox::down-button{width: 400px}
-                                    QSpinBox::up-button{width: 400px}
-                                    ''')
-
-        vbox = QGridLayout()
-
-        self.tiltUp.pressed.connect(stm.tiltUpFunc)
-        self.tiltDown.pressed.connect(stm.tiltDownFunc)
-        self.panLeft.pressed.connect(stm.panLeftFunc)
-        self.panRight.pressed.connect(stm.panRightFunc)
-
-        vbox.addWidget(self.tiltUp, 0, 1)
-        vbox.addWidget(self.tiltDown, 2, 1)
-        vbox.addWidget(self.panLeft, 1, 0)
-        vbox.addWidget(self.panRight, 1, 2)
-
-        vbox.addWidget(self.tilt_spinbox, 3, 0, 1, 3)
-        vbox.addWidget(self.pan_spinbox, 4, 0, 1, 3)
-
-        # set alignment, spacing, and assign layout to groupBox
-        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
-        vbox.setSpacing(10)
-
-        groupBox.setLayout(vbox)
-        return groupBox
+    # # region panTilt
+    # def panTiltBox(self):
+    #     groupBox = QGroupBox("Pan/Tilt Control")  # create a GroupBox
+    #
+    #     self.tiltDown = QPushButton(self)
+    #     self.tiltDown.setFixedSize(200, 200)
+    #     self.tiltDown.setFont(QFont('Calibri', 30))
+    #     self.tiltDown.setText("↓")
+    #     self.tiltDown.setStyleSheet('QPushButton{color: white}')
+    #     self.tiltDown.setStyleSheet('''
+    #                     QPushButton {
+    #                         color: white; background-color : #CC7722; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:pressed {
+    #                         color: white; background-color : #99520c; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:disabled {
+    #                         background-color: gray;
+    #                     }
+    #                     ''')
+    #
+    #     self.tiltUp = QPushButton(self)
+    #     self.tiltUp.setFixedSize(200, 200)
+    #     self.tiltUp.setFont(QFont('Calibri', 30))
+    #     self.tiltUp.setText("↑")
+    #     self.tiltUp.setStyleSheet('QPushButton{color: white}')
+    #     self.tiltUp.setStyleSheet('''
+    #                     QPushButton {
+    #                         color: white; background-color : #CC7722; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:pressed {
+    #                         color: white; background-color : #99520c; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:disabled {
+    #                         background-color: gray;
+    #                     }
+    #                     ''')
+    #     self.panLeft = QPushButton(self)
+    #     self.panLeft.setFixedSize(200, 200)
+    #     self.panLeft.setFont(QFont('Calibri', 30))
+    #     self.panLeft.setText("←")
+    #     self.panLeft.setStyleSheet('QPushButton{color: white}')
+    #     self.panLeft.setStyleSheet('''
+    #                     QPushButton {
+    #                         color: white; background-color : #CC7722; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:pressed {
+    #                         color: white; background-color : #99520c; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:disabled {
+    #                         background-color: gray;
+    #                     }
+    #                     ''')
+    #
+    #     self.panRight = QPushButton(self)
+    #     self.panRight.setFixedSize(200, 200)
+    #     self.panRight.setFont(QFont('Calibri', 30))
+    #     self.panRight.setText("→")
+    #     self.panRight.setStyleSheet('QPushButton{color: white}')
+    #     self.panRight.setStyleSheet('''
+    #                     QPushButton {
+    #                         color: white; background-color : #CC7722; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:pressed {
+    #                         color: white; background-color : #99520c; border-radius : 20px;
+    #                         border : 0px solid black; font-weight : bold;
+    #                     }
+    #                     QPushButton:disabled {
+    #                         background-color: gray;
+    #                     }
+    #                     ''')
+    #
+    #     self.pan_spinbox = QDoubleSpinBox(self)
+    #     self.pan_spinbox.setMaximum(10)  # max nudge value
+    #     self.pan_spinbox.setMinimum(0.1)  # min nudge value
+    #     self.pan_spinbox.setValue(2)  # default value
+    #     self.pan_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
+    #     self.pan_spinbox.setFont(QFont('Munhwa Gothic', 40))
+    #     self.pan_spinbox.setStyleSheet('''
+    #                                 QSpinBox::down-button{width: 400px}
+    #                                 QSpinBox::up-button{width: 400px}
+    #                                 ''')
+    #
+    #     self.tilt_spinbox = QDoubleSpinBox(self)
+    #     self.tilt_spinbox.setMaximum(10)  # max nudge value
+    #     self.tilt_spinbox.setMinimum(0.1)  # min nudge value
+    #     self.tilt_spinbox.setValue(2)  # default value
+    #     self.tilt_spinbox.setSingleStep(0.05)  # incremental/decremental value when arrows are pressed
+    #     self.tilt_spinbox.setFont(QFont('Munhwa Gothic', 40))
+    #     self.tilt_spinbox.setStyleSheet('''
+    #                                 QSpinBox::down-button{width: 400px}
+    #                                 QSpinBox::up-button{width: 400px}
+    #                                 ''')
+    #
+    #     vbox = QGridLayout()
+    #
+    #     self.tiltUp.pressed.connect(stm.tiltUpFunc)
+    #     self.tiltDown.pressed.connect(stm.tiltDownFunc)
+    #     self.panLeft.pressed.connect(stm.panLeftFunc)
+    #     self.panRight.pressed.connect(stm.panRightFunc)
+    #
+    #     vbox.addWidget(self.tiltUp, 0, 1)
+    #     vbox.addWidget(self.tiltDown, 2, 1)
+    #     vbox.addWidget(self.panLeft, 1, 0)
+    #     vbox.addWidget(self.panRight, 1, 2)
+    #
+    #     vbox.addWidget(self.tilt_spinbox, 3, 0, 1, 3)
+    #     vbox.addWidget(self.pan_spinbox, 4, 0, 1, 3)
+    #
+    #     # set alignment, spacing, and assign layout to groupBox
+    #     vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+    #     vbox.setSpacing(10)
+    #
+    #     groupBox.setLayout(vbox)
+    #     return groupBox
 
     # endregion panTilt
 
@@ -768,9 +768,10 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         groupBox = QGroupBox()
         self.widget_nudge = self.DispensernudgeBox()
         self.widget_plunge = self.DispenserplungeBox()
+        self.widget_A_nudge= self.DispenserAnudgeBox()
         self.setup_settings = self.DispensersetupBox()
         self.vac_settings = self.DispensersetupBox2()
-        self.graphs = self.graphBox()
+        self.graphs = self.DispensergraphBox()
 
         subBox = QGroupBox()
         vbox = QHBoxLayout()
@@ -791,7 +792,8 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # place the GroupBoxes above into a grid layout: x, y indicates position in the grid
         layout.addWidget(self.widget_plunge, 0, 0)
         layout.addWidget(self.widget_nudge, 0, 1)
-        layout.addWidget(graphBox, 0, 2)
+        layout.addWidget(self.widget_A_nudge, 0, 2)
+        layout.addWidget(graphBox, 0, 3)
         # set layout for the GroupBox
         groupBox.setLayout(layout)
 
@@ -810,11 +812,11 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         groupBox = QGroupBox("Operations")
 
         # create settings for homeButton
-        self.homeButton = QPushButton(self)
-        self.homeButton.setFixedSize(300, 300)
-        self.homeButton.setFont(QFont('Munhwa Gothic', 40))
-        self.homeButton.setText("Disp")
-        self.homeButton.setStyleSheet('''
+        self.DispensehomeButton = QPushButton(self)
+        self.DispensehomeButton.setFixedSize(300, 300)
+        self.DispensehomeButton.setFont(QFont('Munhwa Gothic', 40))
+        self.DispensehomeButton.setText("Disp")
+        self.DispensehomeButton.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #2E8B57; border-radius : 150px;
                                 border : 0px solid black; font-weight : bold;
@@ -827,14 +829,14 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 background-color: gray;
                             }
                             ''')
-        self.homeButton.pressed.connect(ni.drop_dispense)  # connect the button to dispense function
+        self.DispensehomeButton.pressed.connect(ni.drop_dispense)  # connect the button to dispense function
 
         # create settings for plungeButton
-        self.plungeButton = QPushButton(self)
-        self.plungeButton.setFixedSize(300, 300)
-        self.plungeButton.setFont(QFont('Munhwa Gothic', 40))
-        self.plungeButton.setText("P+D")
-        self.plungeButton.setStyleSheet('''
+        self.DispenseplungeButton = QPushButton(self)
+        self.DispenseplungeButton.setFixedSize(300, 300)
+        self.DispenseplungeButton.setFont(QFont('Munhwa Gothic', 40))
+        self.DispenseplungeButton.setText("P+D")
+        self.DispenseplungeButton.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #AA4A44; border-radius : 150px;
                                 border : 0px solid black; font-weight : bold;
@@ -847,18 +849,18 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 background-color: gray;
                             }
                             ''')
-        self.plungeButton.pressed.connect(Dispenser_Axis.Dispense_Plunge)  # TODO: tie button to plunging operation + dispense function (need to implement)
+        self.DispenseplungeButton.pressed.connect(Dispenser_Axis.Dispense_Plunge)  # TODO: tie button to plunging operation + dispense function (need to implement)
 
 
-        self.timer_button = QPushButton()
-        self.timer_button.setText("Reset STM")
-        self.timer_button.pressed.connect(stm.reset)
+        self.Dispensetimer_button = QPushButton()
+        self.Dispensetimer_button.setText("Reset STM")
+        self.Dispensetimer_button.pressed.connect(stm.reset)
 
-        self.save_button = QPushButton()
-        self.save_button.setText("Save last plunge")
-        self.save_button.setFont(QFont('Munhwa Gothic', 25))
-        self.save_button.setFixedSize(300, 80)
-        self.save_button.setStyleSheet('''
+        self.Dispensesave_button = QPushButton()
+        self.Dispensesave_button.setText("Save last plunge")
+        self.Dispensesave_button.setFont(QFont('Munhwa Gothic', 25))
+        self.Dispensesave_button.setFixedSize(300, 80)
+        self.Dispensesave_button.setStyleSheet('''
                             QPushButton {
                                 color: white; background-color : #CC7722;
                                 border : 0px solid black;
@@ -868,22 +870,22 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                 border : 0px solid black;                              
                             }
                             ''')
-        self.save_button.pressed.connect(stm.savePlungeData)
+        self.Dispensesave_button.pressed.connect(stm.savePlungeData)
 
-        self.save_name = QLineEdit()
-        self.save_name.setText("Enter file name")
-        self.save_name.setFont(QFont('Munhwa Gothic', 16))
-        self.save_name.setFixedSize(300, 80)
+        self.Dispensesave_name = QLineEdit()
+        self.Dispensesave_name.setText("Enter file name")
+        self.Dispensesave_name.setFont(QFont('Munhwa Gothic', 16))
+        self.Dispensesave_name.setFixedSize(300, 80)
 
 
         # create a vertical box layout - stacks QWidgets vertically
         vbox = QVBoxLayout()
         # add widgets to vbox
-        vbox.addWidget(self.homeButton)
-        vbox.addWidget(self.plungeButton)
-        vbox.addWidget(self.timer_button)
-        vbox.addWidget(self.save_button)
-        vbox.addWidget(self.save_name)
+        vbox.addWidget(self.DispensehomeButton)
+        vbox.addWidget(self.DispenseplungeButton)
+        vbox.addWidget(self.Dispensetimer_button)
+        vbox.addWidget(self.Dispensesave_button)
+        vbox.addWidget(self.Dispensesave_name)
 
         # set vbox to align at the center and top
         vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -1062,6 +1064,157 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         groupBox.setLayout(vbox)  # set layout for groupBox
         return groupBox
 
+    def DispenserAnudgeBox(self):
+        groupBox = QGroupBox("A_Nudge")  # create GroupBox to hold QWidgets
+
+        # create button to initiate nudge: this button will set device enable states and disable home/plunge buttons
+        self.AstartNudge = QPushButton(self)
+        self.AstartNudge.setFixedSize(300, 300)
+        self.AstartNudge.setFont(QFont('Munhwa Gothic', 40))
+        self.AstartNudge.setText("NUDGE")
+        self.AstartNudge.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #4682B4; border-radius : 150px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #0F52BA; border-radius : 150px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to nudge upwards
+        self.AupNudge = QPushButton(self)
+        self.AupNudge.setFixedSize(300, 100)
+        self.AupNudge.setFont(QFont('Calibri', 30))
+        self.AupNudge.setText("Up")
+        self.AupNudge.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create button to stop nudge process to enable plunge/home capabilities
+        self.AstopButton = QPushButton(self)
+        self.AstopButton.setFixedSize(300, 100)
+        self.AstopButton.setFont(QFont('Munhwa Gothic', 30))
+        self.AstopButton.setText("STOP")
+        self.AstopButton.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #AA4A44; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #803833; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            }
+                            ''')
+
+        # create button to nudge downwards
+        self.AdownNudge = QPushButton(self)
+        self.AdownNudge.setFixedSize(300, 100)
+        self.AdownNudge.setFont(QFont('Calibri', 30))
+        self.AdownNudge.setText("Down")
+        self.AdownNudge.setStyleSheet('QPushButton{color: white}')
+        self.AdownNudge.setStyleSheet('''
+                            QPushButton {
+                                color: white; background-color : #CC7722; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;
+                            }
+                            QPushButton:pressed {
+                                color: white; background-color : #99520c; border-radius : 20px;
+                                border : 0px solid black; font-weight : bold;                               
+                            }
+                            QPushButton:disabled {
+                                background-color: gray;
+                            }
+                            ''')
+
+        # create label to indicate where to input nudge distance
+        self.Anudge_spin_label = QLabel(self)
+        self.Anudge_spin_label.setText("Set nudge distance")
+        self.Anudge_spin_label.setFont(QFont('Munhwa Gothic', 20))
+
+        # create DoubleSpinBox (can hold float values) to indicate desired nudge distance & set associated settings
+        self.Anudge_spinbox = QDoubleSpinBox(self)
+        self.Anudge_spinbox.setMaximum(2000)  # max nudge value
+        self.Anudge_spinbox.setMinimum(0.1)  # min nudge value
+        self.Anudge_spinbox.setValue(2)  # default value
+        self.Anudge_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
+        self.Anudge_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
+        self.Anudge_spinbox.setFont(QFont('Munhwa Gothic', 40))
+        self.Anudge_spinbox.setStyleSheet('''
+                            QSpinBox::down-button{width: 400px}
+                            QSpinBox::up-button{width: 400px}
+                            ''')
+        self.AhomeButton = QPushButton(self)
+        self.AhomeButton.setFixedSize(300, 100)
+        self.AhomeButton.setFont(QFont('Munhwa Gothic', 20))
+        self.AhomeButton.setText("HOME")
+        self.AhomeButton.setStyleSheet('''
+                                    QPushButton {
+                                        color: white; background-color : #2E8B57; border-radius : 150px;
+                                        border : 0px solid black; font-weight : bold;
+                                    }
+                                    QPushButton:pressed {
+                                        color: white; background-color : #1e5e3a; border-radius : 150px;
+                                        border : 0px solid black; font-weight : bold;                               
+                                    }
+                                    QPushButton:disabled {
+                                        background-color: gray;
+                                    }
+                                    ''')
+        # connect buttons to associated functions
+        # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
+        self.AstartNudge.clicked.connect(A_axis.A_start_func)
+        self.AupNudge.pressed.connect(A_axis.A_up_func)
+        self.AstopButton.clicked.connect(A_axis.A_stop_func)
+        self.AdownNudge.pressed.connect(A_axis.A_down_func)
+        self.AhomeButton.pressed.connect(motor.home)  # connect the button the operation function
+
+        # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
+        # and be able to read if button is help (checkable status)
+        #self.upNudge.setAutoRepeat(True)
+        self.AupNudge.setEnabled(False)
+        self.AupNudge.setCheckable(True)
+        #self.downNudge.setAutoRepeat(True)
+        self.AdownNudge.setEnabled(False)
+        self.AdownNudge.setCheckable(True)
+
+        # disable stop button
+        self.AstopButton.setEnabled(False)
+
+        # create vertical box layout
+        vbox = QVBoxLayout()
+        # add widgets to the box
+        vbox.addWidget(self.AstartNudge)
+        vbox.addWidget(self.AupNudge)
+        vbox.addWidget(self.AstopButton)
+        vbox.addWidget(self.AdownNudge)
+        vbox.addWidget(self.Anudge_spin_label)
+        vbox.addWidget(self.Anudge_spinbox)
+        vbox.addWidget(self.AhomeButton)
+        # set alignment flags
+        vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        # set spacing between widgets
+        vbox.setSpacing(20)
+        groupBox.setLayout(vbox)  # set layout for groupBox
+        return groupBox
 
 # function: setupBox
     # purpose: create widgets for plunge settings/control options
@@ -1069,30 +1222,30 @@ class MainWindow(QMainWindow):  # subclassing Qt class
     # return: GroupBox
     def DispensersetupBox(self):
         groupBox = QGroupBox("Controls")  # create a GroupBox
-        self.h_controller_check = QCheckBox(self)  # create a checkbox for turning on heater controller
-        self.h_controller_check.setText("HEATER CONTROL")
-        self.h_controller_check.setFont(QFont('Munhwa Gothic', 30))
-        self.h_controller_check.setStyleSheet("QCheckBox::indicator"
+        self.Dispenserh_controller_check = QCheckBox(self)  # create a checkbox for turning on heater controller
+        self.Dispenserh_controller_check.setText("HEATER CONTROL")
+        self.Dispenserh_controller_check.setFont(QFont('Munhwa Gothic', 30))
+        self.Dispenserh_controller_check.setStyleSheet("QCheckBox::indicator"
                                               "{"
                                               "width : 70px;"
                                               "height : 70px;"
                                               "}")
 
         # create checkbox for heater
-        self.h_power = QCheckBox(self)
-        self.h_power.setText("HEATER")
-        self.h_power.setFont(QFont('Munhwa Gothic', 30))
-        self.h_power.setStyleSheet("QCheckBox::indicator"
+        self.Dispenserh_power = QCheckBox(self)
+        self.Dispenserh_power.setText("HEATER")
+        self.Dispenserh_power.setFont(QFont('Munhwa Gothic', 30))
+        self.Dispenserh_power.setStyleSheet("QCheckBox::indicator"
                                    "{"
                                    "width : 70px;"
                                    "height : 70px;"
                                    "}")
 
         # create checkbox for vacuum continuously on
-        self.vac = QCheckBox(self)
-        self.vac.setText("VACUUM")
-        self.vac.setFont(QFont('Munhwa Gothic', 30))
-        self.vac.setStyleSheet("QCheckBox::indicator"
+        self.Dispenservac = QCheckBox(self)
+        self.Dispenservac.setText("VACUUM")
+        self.Dispenservac.setFont(QFont('Munhwa Gothic', 30))
+        self.Dispenservac.setStyleSheet("QCheckBox::indicator"
                                "{"
                                "width : 70px;"
                                "height : 70px;"
@@ -1105,66 +1258,66 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                                "width : 70px;"
                                "height : 70px;"
                                "}")
-        self.spacerlabel = QLabel("")
-        self.spacerlabel.setFont(QFont('Munhwa Fothic', 67))
+        self.Dispenserspacerlabel = QLabel("")
+        self.Dispenserspacerlabel.setFont(QFont('Munhwa Fothic', 67))
 
         # connect checkboxes to functions - update when checkbox value is changed
-        self.h_controller_check.stateChanged.connect(self.guiheater_controller)
-        self.h_power.stateChanged.connect(self.guiheater_power)
-        self.vac.stateChanged.connect(lambda: ni.ni_set('vacuum',  (not self.vac.isChecked())))
-        self.actuator.stateChanged.connect(lambda: ni.ni_set('actuator_trig',  (self.actuator.isChecked())))
+        self.Dispenserh_controller_check.stateChanged.connect(self.Dispenserguiheater_controller)
+        self.Dispenserh_power.stateChanged.connect(self.Dispenserguiheater_power)
+        self.Dispenservac.stateChanged.connect(lambda: ni.ni_set('vacuum',  (not self.Dispenservac.isChecked())))
+        self.actuator.stateChanged.connect(lambda: ni.ni_set('actuator_trig',  (not self.actuator.isChecked())))
 
         # set enable state of checkboxes
-        self.h_controller_check.setEnabled(True)
-        self.h_power.setEnabled(True)
-        self.vac.setEnabled(True)
+        self.Dispenserh_controller_check.setEnabled(True)
+        self.Dispenserh_power.setEnabled(True)
+        self.Dispenservac.setEnabled(True)
         self.actuator.setEnabled(True)
         #Initially have all checkboxes to be true since it was initialized in main function
-        self.h_controller_check.setChecked(True)
-        self.h_power.setChecked(True)
-        self.vac.setChecked(False)
+        self.Dispenserh_controller_check.setChecked(True)
+        self.Dispenserh_power.setChecked(True)
+        self.Dispenservac.setChecked(False)
         self.actuator.setChecked(False)
         # create graph widget to read temperature; updates in plunge stage
-        self.graphTempPos = pg.PlotWidget(self)
-        self.graphTempPos.setBackground('black')
-        self.graphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
+        self.DispensergraphTempPos = pg.PlotWidget(self)
+        self.DispensergraphTempPos.setBackground('black')
+        self.DispensergraphTempPos.setTitle("Plunge Cooler Temperature vs Position", color="w", size="10pt")
         styles = {"color": "white", "font-size": "10px"}
-        self.graphTempPos.setLabel("left", "Voltage (V)", **styles)
-        self.graphTempPos.setLabel("bottom", "Position (cm)", **styles)
-        self.graphTempPos.showGrid(x=True, y=True)
+        self.DispensergraphTempPos.setLabel("left", "Voltage (V)", **styles)
+        self.DispensergraphTempPos.setLabel("bottom", "Position (cm)", **styles)
+        self.DispensergraphTempPos.showGrid(x=True, y=True)
 
-        self.temp_h_box = QHBoxLayout()
+        self.Dispensertemp_h_box = QHBoxLayout()
 
-        self.instant_temp_button = QPushButton(self)
-        self.instant_temp_button.setText("HIGH")
+        self.Dispenserinstant_temp_button = QPushButton(self)
+        self.Dispenserinstant_temp_button.setText("HIGH")
         #self.instant_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', True))
-        self.instant_temp_button.pressed.connect(ni.pneumatic_actuator_pull)
-        self.temp_h_box.addWidget(self.instant_temp_button)
+        self.Dispenserinstant_temp_button.pressed.connect(ni.pneumatic_actuator_pull)
+        self.Dispensertemp_h_box.addWidget(self.Dispenserinstant_temp_button)
 
-        self.instant_temp_label = QLabel("")
-        self.instant_temp_label.setText("Actuate")
-        self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
-        self.temp_h_box.addWidget(self.instant_temp_label)
+        self.Dispenserinstant_temp_label = QLabel("")
+        self.Dispenserinstant_temp_label.setText("Actuate")
+        self.Dispenserinstant_temp_label.setFont(QFont('Munhwa Gothic', 20))
+        self.Dispensertemp_h_box.addWidget(self.Dispenserinstant_temp_label)
 
-        self.profile_temp_button = QPushButton(self)
-        self.profile_temp_button.setText("LOW")
+        self.Dispenserprofile_temp_button = QPushButton(self)
+        self.Dispenserprofile_temp_button.setText("LOW")
         #self.profile_temp_button.pressed.connect(lambda:ni.ni_set('A_motor_power', False))
-        self.profile_temp_button.pressed.connect(ni.pneumatic_actuator_push)
-        self.temp_h_box.addWidget(self.profile_temp_button)
+        self.Dispenserprofile_temp_button.pressed.connect(ni.pneumatic_actuator_push)
+        self.Dispensertemp_h_box.addWidget(self.Dispenserprofile_temp_button)
 
-        self.temp_h_group_box = QGroupBox()
-        self.temp_h_group_box.setLayout(self.temp_h_box)
+        self.Dispensertemp_h_group_box = QGroupBox()
+        self.Dispensertemp_h_group_box.setLayout(self.Dispensertemp_h_box)
 
 
         # add widgets to vertical box layout
         vbox = QVBoxLayout()
-        vbox.addWidget(self.h_controller_check)
-        vbox.addWidget(self.h_power)
-        vbox.addWidget(self.vac)
+        vbox.addWidget(self.Dispenserh_controller_check)
+        vbox.addWidget(self.Dispenserh_power)
+        vbox.addWidget(self.Dispenservac)
         vbox.addWidget(self.actuator)
 
-        vbox.addWidget(self.graphTempPos)
-        vbox.addWidget(self.temp_h_group_box)
+        vbox.addWidget(self.DispensergraphTempPos)
+        vbox.addWidget(self.Dispensertemp_h_group_box)
 
         # set alignment, spacing, and assign layout to groupBox
         vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -1528,7 +1681,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.brakeBox = QSpinBox(self)
         self.brakeBox.setMaximum(16000)  # max nudge value
         self.brakeBox.setMinimum(1)  # min nudge value
-        self.brakeBox.setValue(13600)  # default value
+        self.brakeBox.setValue(12400)  # default value
         self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
 
         self.brakeBox.setFont(QFont('Munhwa Gothic', 40))
@@ -1868,14 +2021,24 @@ class MainWindow(QMainWindow):  # subclassing Qt class
             self.h_power.setChecked(False)
         ni.ni_set('heater_controller', self.h_controller_check.isChecked())
 
+    def Dispenserguiheater_controller(self):
+        if self.Dispenserh_controller_check.isChecked() == False:
+            self.Dispenserh_power.setChecked(False)
+        ni.ni_set('heater_controller', self.Dispenserh_controller_check.isChecked())
+
     # function: guiheater_power
     # purpose: turn heater on or off depending on checkbox status; will not turn on without controller being on
     # parameters: self
     # return: none
     def guiheater_power(self):
-        if self.h_power.isChecked():
+        if self.h_power.isChecked() == True:
             self.h_controller_check.setChecked(True)
         ni.ni_set('heater', self.h_power.isChecked())
+
+    def Dispenserguiheater_power(self):
+        if self.Dispenserh_power.isChecked() == True:
+            self.Dispenserh_controller_check.setChecked(True)
+        ni.ni_set('heater', self.Dispenserh_power.isChecked())
 
 
     # function: plungevac_on
@@ -2020,6 +2183,41 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.setSpacing(10)
         vbox.addWidget(self.graphVel)
         vbox.addWidget(self.graphVelPos)
+        groupBox.setLayout(vbox)
+        return groupBox
+
+        # endregion setup_funcs2
+
+    def DispensergraphBox(self):
+        groupBox = QGroupBox("Graphs")  # create a GroupBox
+
+        # create graph widget to read velocity; updates in plunge stage
+        self.DispensergraphVel = pg.PlotWidget(self)
+        self.DispensergraphVel.setBackground('black')
+        self.DispensergraphVel.setTitle("Plunge Cooler Position vs Time", color="w", size="10pt")
+        styles = {"color": "white", "font-size": "10px"}
+        self.DispensergraphVel.setLabel("left", "Position (cm)", **styles)
+        self.DispensergraphVel.setLabel("bottom", "Time (ms)", **styles)
+        self.DispensergraphVel.showGrid(x=True, y=True)
+        self.DispensergraphVel.setXRange(0.3, 0)
+        self.DispensergraphVel.setYRange(2.2, 0)
+
+        # create graph widget to read velocity; updates in plunge stage
+        self.DispensergraphVelPos = pg.PlotWidget(self)
+        self.DispensergraphVelPos.setBackground('black')
+        self.DispensergraphVelPos.setTitle("Plunge Cooler Velocity vs Position", color="w", size="10pt")
+        styles = {"color": "white", "font-size": "10px"}
+        self.DispensergraphVelPos.setLabel("left", "Velocity (m/s)", **styles)
+        self.DispensergraphVelPos.setLabel("bottom", "Position (cm)", **styles)
+        self.DispensergraphVelPos.showGrid(x=True, y=True)
+        self.DispensergraphVelPos.setXRange(23, 0)
+        self.DispensergraphVelPos.setYRange(2.2, 0)
+
+        vbox = QHBoxLayout()
+        vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
+        vbox.setSpacing(10)
+        vbox.addWidget(self.DispensergraphVel)
+        vbox.addWidget(self.DispensergraphVelPos)
         groupBox.setLayout(vbox)
         return groupBox
 

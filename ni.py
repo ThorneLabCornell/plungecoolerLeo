@@ -21,7 +21,7 @@ PINOUT = { # too lazy to implement and enum right now
     'A_dir':                DEVICE_NAME + "/port2/line1",
     'A_en':                 DEVICE_NAME + "/port2/line6",
     'A_home':               DEVICE_NAME + "/port2/line0",
-    'A_motor_power':        DEVICE_NAME + "/port0/line1",#switching to external power source fo now (used tobe 0,5)
+    'A_motor_power':        DEVICE_NAME + "/port0/line5",#switching to external power source fo now (used tobe 0,5)
     'thermocouple':         DEVICE_NAME + "/ai6",
     'stm_rst':              DEVICE_NAME + "/port1/line2",
 #dispenser ports
@@ -33,7 +33,7 @@ PINOUT = { # too lazy to implement and enum right now
     'microdrop_trig':               DEVICE_NAME+ "/port1/line6",#port 5 on daq
     #'actuator_trig':               DEVICE_NAME+ "/port0/line1",#port 17 on daq (12v power trig)
     #'actuator_trig':               DEVICE_NAME+ "/port2/line3"
-    'actuator_trig':               DEVICE_NAME+ "/port0/line5"
+    'actuator_trig':               DEVICE_NAME+ "/port2/line3"
 }
 
 

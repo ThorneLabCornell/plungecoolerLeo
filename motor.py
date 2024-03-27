@@ -322,6 +322,8 @@ def plunge():
     pptimer = timer()
     globs.gui.graphVel.clear()  # clear graph widget
     globs.gui.graphVelPos.clear()
+    globs.gui.DispensergraphVel.clear()  # clear graph widget
+    globs.gui.DispensergraphVelPos.clear()
     globs.gui.graphTempPos.clear()
 
     globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
@@ -404,6 +406,10 @@ def plunge():
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
     globs.gui.graphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData], [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
 
+    globs.gui.DispensergraphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in
+                                               globs.plungePosData])  # plot collected data
+    globs.gui.DispensergraphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData],
+                               [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])
     # print(get_position())
 
 
