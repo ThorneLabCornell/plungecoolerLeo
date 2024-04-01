@@ -86,6 +86,7 @@ def get_velocity():
 def move_plunge():
     print("entered move_plunge")
     # message to stm32 to start plunge process
+    #epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
     stop_position = int(globs.gui.brakeBox.value() + get_position() / 2) # + b/c get_position returns a negative. comepnsates for offset in case of ppp
     print("stop pos:" + str(stop_position))
     timepoint_position = int((globs.a_position - globs.a_offset)/globs.A_STEPS_PER_UM)
@@ -158,10 +159,11 @@ def move_nudge(direction, nudge_step):
     # TODO: MAKE SURE IT DOESNT GO OUT OF BOUNDS
 
     print("at: " + str(get_position()) + "; moving to: " + str(nudge_step))
+    epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disenable device new line
     epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
     epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration, byref(pErrorCode))  # set profile parameters
     epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))
-    time.sleep(.1)
+    #time.sleep(.1)
     stm.brake_set(False)
     epos.VCS_MoveToPosition(keyHandle, nodeID, nudge_step, True, True, byref(pErrorCode))  # move to position
     time.sleep(.5)
@@ -313,6 +315,7 @@ def plunge():
     if abs(get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
         return
     print("forward")
+    pptimer = timer()
     # resert global tracking variables
     globs.plungeData.clear()  # clear any previously collected data
     globs.plungeTime.clear()
@@ -320,19 +323,18 @@ def plunge():
     globs.plungeVelData=[]
     globs.plungeTemp.clear()
     globs.plunge_temp_time.clear()
-    pptimer = timer()
     globs.gui.graphVel.clear()  # clear graph widget
     globs.gui.graphVelPos.clear()
     globs.gui.graphTempPos.clear()
+    #globs.true_timepoint = 0
 
-    globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
-    styles = {"color": "white", "font-size": "10px"}
-    globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
-    globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
+    # globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
+    # styles = {"color": "white", "font-size": "10px"}
+    # globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
+    # globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
     print(globs.gui.plungepause.isChecked())
     if globs.gui.plungepause.isChecked():
-
-        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
+        #epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
         pp_wait_time = globs.gui.pp_time_box.value()
         # TODO: characterize how much extra t delay there is at beginning of PPP. might not be a huge deal
         if globs.gui.plungevac.isChecked() and globs.gui.vac_on_time.value() > pp_wait_time:
@@ -346,7 +348,7 @@ def plunge():
                     break
             globs.gui.vac_on_time.setEnabled(True)  # return previous settings to enable changes
             globs.gui.plungevac.setEnabled(True)
-
+        print("nudged")
         move_nudge('down', globs.gui.plungepausedist.value())  # move to the distance
 
         if globs.gui.plungevac.isChecked() and globs.gui.vac_on_time.value() == pp_wait_time:
@@ -361,7 +363,7 @@ def plunge():
                 vac_on = True
             if timer() - pptimer > pp_wait_time:
                 break
-
+        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # disable device
         move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
         ni.ni_set('vacuum', True)
 
