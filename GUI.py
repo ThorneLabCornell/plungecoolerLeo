@@ -1081,18 +1081,18 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.temp_h_box = QHBoxLayout()
 
         self.instant_temp_button = QPushButton(self)
-        self.instant_temp_button.setText("🤒")
-        self.instant_temp_button.pressed.connect(ni.getT)
+        self.instant_temp_button.setText("on")
+        self.instant_temp_button.pressed.connect(lambda: ni.ni_set('cryo_valve',            True))
         self.temp_h_box.addWidget(self.instant_temp_button)
 
         self.instant_temp_label = QLabel("")
-        self.instant_temp_label.setText("Read Temperature")
+        self.instant_temp_label.setText("cryo_valve")
         self.instant_temp_label.setFont(QFont('Munhwa Gothic', 20))
         self.temp_h_box.addWidget(self.instant_temp_label)
 
         self.profile_temp_button = QPushButton(self)
-        self.profile_temp_button.setText("🤒📈")
-        self.profile_temp_button.pressed.connect(ni.collect_temp_profile)
+        self.profile_temp_button.setText("off")
+        self.profile_temp_button.pressed.connect(lambda: ni.ni_set('cryo_valve',            False))
         self.temp_h_box.addWidget(self.profile_temp_button)
 
         self.temp_h_group_box = QGroupBox()
