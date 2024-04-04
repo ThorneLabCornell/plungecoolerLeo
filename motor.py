@@ -158,6 +158,7 @@ def move_nudge(direction, nudge_step):
     # TODO: MAKE SURE IT DOESNT GO OUT OF BOUNDS
 
     print("at: " + str(get_position()) + "; moving to: " + str(nudge_step))
+    epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
     epos.VCS_ActivateProfilePositionMode(keyHandle, nodeID, byref(pErrorCode))
     epos.VCS_SetPositionProfile(keyHandle, nodeID, target_speed, acceleration, deceleration, byref(pErrorCode))  # set profile parameters
     epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))
@@ -332,8 +333,6 @@ def plunge():
     globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
     print(globs.gui.plungepause.isChecked())
     if globs.gui.plungepause.isChecked():
-
-        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
         pp_wait_time = globs.gui.pp_time_box.value()
         # TODO: characterize how much extra t delay there is at beginning of PPP. might not be a huge deal
         if globs.gui.plungevac.isChecked() and globs.gui.vac_on_time.value() > pp_wait_time:
@@ -362,7 +361,7 @@ def plunge():
                 vac_on = True
             if timer() - pptimer > pp_wait_time:
                 break
-
+        epos.VCS_SetEnableState(keyHandle, nodeID, byref(pErrorCode))  # enable device
         move_plunge()  # arbitrary amount to ensure fault state reached; -ve is down
         ni.ni_set('vacuum', True)
 

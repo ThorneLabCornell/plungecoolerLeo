@@ -110,10 +110,10 @@ def Dispense_Plunge():
     globs.gui.graphVelPos.clear()
     globs.gui.graphTempPos.clear()
 
-    globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
-    styles = {"color": "white", "font-size": "10px"}
-    globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
-    globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
+    # globs.gui.graphTempPos.setTitle("Plunge Cooler Temperature vs Time", color="w", size="10pt")
+    # styles = {"color": "white", "font-size": "10px"}
+    # globs.gui.graphTempPos.setLabel("left", "Voltage (V)", **styles)
+    # globs.gui.graphTempPos.setLabel("bottom", "Time (s)", **styles)
     print(globs.gui.plungepause.isChecked())
     vac_time=globs.gui.vac_on_time.value()
     if globs.gui.plungepause.isChecked():

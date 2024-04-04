@@ -992,7 +992,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.nudge_spinbox = QDoubleSpinBox(self)
         self.nudge_spinbox.setMaximum(2000)  # max nudge value
         self.nudge_spinbox.setMinimum(0.1)  # min nudge value
-        self.nudge_spinbox.setValue(2)  # default value
+        self.nudge_spinbox.setValue(20)  # default value
         self.nudge_spinbox.setSingleStep(0.1)  # incremental/decremental value when arrows are pressed
         self.nudge_spinbox.setSuffix(" cm")  # show a suffix (this is not read into the __.value() func)
         self.nudge_spinbox.setFont(QFont('Munhwa Gothic', 40))
@@ -1000,23 +1000,15 @@ class MainWindow(QMainWindow):  # subclassing Qt class
                             QSpinBox::down-button{width: 400px}
                             QSpinBox::up-button{width: 400px}
                             ''')
-        self.homeButton = QPushButton(self)
-        self.homeButton.setFixedSize(300, 100)
-        self.homeButton.setFont(QFont('Munhwa Gothic', 20))
-        self.homeButton.setText("HOME")
-        self.homeButton.setStyleSheet('''
-                                    QPushButton {
-                                        color: white; background-color : #2E8B57; border-radius : 150px;
-                                        border : 0px solid black; font-weight : bold;
-                                    }
-                                    QPushButton:pressed {
-                                        color: white; background-color : #1e5e3a; border-radius : 150px;
-                                        border : 0px solid black; font-weight : bold;                               
-                                    }
-                                    QPushButton:disabled {
-                                        background-color: gray;
-                                    }
-                                    ''')
+        # create checkbox for vacuum continuously on
+        self.cryoButton = QCheckBox(self)
+        self.cryoButton.setText("More LN2")
+        self.cryoButton.setFont(QFont('Munhwa Gothic', 30))
+        self.cryoButton.setStyleSheet("QCheckBox::indicator"
+                                        "{"
+                                        "width : 70px;"
+                                        "height : 70px;"
+                                        "}")
         # # create a label holding the positional data
         # self.current_pos_label = QLabel(self)
         # # note: this method of setting distance should be modified. takes a manually derived pos_home position
@@ -1033,7 +1025,9 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.upNudge.pressed.connect(Dispenser_Axis.Dispenser_down_func)
         self.stopButton.clicked.connect(Dispenser_Axis.Dispenser_stop_func)
         self.downNudge.pressed.connect(Dispenser_Axis.Dispenser_up_func)
-        self.homeButton.pressed.connect(motor.home)  # connect the button the operation function
+        self.cryoButton.stateChanged.connect(lambda: ni.ni_set('cryo_valve', (not self.cryoButton.isChecked())))
+
+        self.cryoButton.setEnabled(True)
 
         # set up and down nudge to autorepeat (holding will call func multiple times), disable buttons,
         # and be able to read if button is help (checkable status)
@@ -1043,6 +1037,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         #self.downNudge.setAutoRepeat(True)
         self.downNudge.setEnabled(False)
         self.downNudge.setCheckable(True)
+        self.cryoButton.setChecked(False)
 
         # disable stop button
         self.stopButton.setEnabled(False)
@@ -1056,7 +1051,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         vbox.addWidget(self.downNudge)
         vbox.addWidget(self.nudge_spin_label)
         vbox.addWidget(self.nudge_spinbox)
-        vbox.addWidget(self.homeButton)
+        vbox.addWidget(self.cryoButton)
         # set alignment flags
         vbox.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         # set spacing between widgets
@@ -1165,7 +1160,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.AhomeButton = QPushButton(self)
         self.AhomeButton.setFixedSize(300, 100)
         self.AhomeButton.setFont(QFont('Munhwa Gothic', 20))
-        self.AhomeButton.setText("HOME")
+        self.AhomeButton.setText("Motor Home")
         self.AhomeButton.setStyleSheet('''
                                     QPushButton {
                                         color: white; background-color : #2E8B57; border-radius : 150px;
