@@ -55,7 +55,7 @@ def receivePlungeData():
         if log == ACK:  # ack at end of transmission
             break
         else:
-            print(log)
+            #print(log)
             #pos_ticks = int(log)*2 #debug
             if log:  # Check if log is not empty
                 try:
