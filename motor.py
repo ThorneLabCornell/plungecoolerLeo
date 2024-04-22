@@ -165,6 +165,7 @@ def move_nudge(direction, nudge_step):
     epos.VCS_HaltPositionMovement(keyHandle, nodeID, byref(pErrorCode))
     #time.sleep(.1)
     stm.brake_set(False)
+    print("passed")
     epos.VCS_MoveToPosition(keyHandle, nodeID, nudge_step, True, True, byref(pErrorCode))  # move to position
     time.sleep(.5)
     # TODO: look at reimplementing this for more accurate nudging
@@ -277,14 +278,13 @@ def home():
 
         if homed:
             time.sleep(.4)  # hit limit sw, but keep going a bit to bottom out
-            stm.brake_set(True)
             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
             break
         if timer() - startT > 3:
             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
-            stm.brake_set(True)
-
             break
+    print("finish homing")
+    stm.brake_set(True)
     home_task.stop()
 
     '''define current position as the new home'''

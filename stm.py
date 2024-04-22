@@ -12,8 +12,8 @@ BRAKE   = '5'
 RELEASE = '4'
 
 # open serial port. timeout should b e sufficient for any operation to finish.
-# timeout prevents crash in case of communication failure11111111111
-ser = serial.Serial('COM6', 115200, timeout=1.5)
+# timeout prevents crash in case of communication failure
+ser = serial.Serial('COM4', 115200, timeout=1.5)
 
 # ignore all past/pending inputs on the serial port
 def clear_input():
@@ -24,8 +24,12 @@ def clear_input():
 def brake_set(state):
     print("brakin")
     if state:
+        print("brake")
+        print(bytes(BRAKE + '\r\n', 'utf-8'))
         ser.write(bytes(BRAKE + '\r\n', 'utf-8'))  # brake
     else:
+        print("release")
+        print(bytes(RELEASE + '\r\n', 'utf-8'))
         ser.write(bytes(RELEASE + '\r\n', 'utf-8'))  # release
     print(ser.readline())
     print("broke")
@@ -122,7 +126,7 @@ def reset():
     global ser
     ser.close() # gracefully close serial port
     ni.reset_stm()  # physically reset
-    ser = serial.Serial('COM6', 115200)  # reopen serial port
+    ser = serial.Serial('COM4', 115200)  # reopen serial port
 
 
 # saves plunge data into xd.txt
