@@ -33,8 +33,8 @@ PINOUT = { # too lazy to implement and enum right now
     'microdrop_trig':               DEVICE_NAME+ "/port1/line6",#port 5 on daq
     #'actuator_trig':               DEVICE_NAME+ "/port0/line1",#port 17 on daq (12v power trig)
     #'actuator_trig':               DEVICE_NAME+ "/port2/line3"
-    'actuator_trig':               DEVICE_NAME+ "/port2/line2",
-    'cryo_valve':                   DEVICE_NAME+ "/port2/line3"
+    'actuator_trig':               DEVICE_NAME+ "/port2/line3",
+    'cryo_valve':                   DEVICE_NAME+ "/port1/line1"
 }
 
 

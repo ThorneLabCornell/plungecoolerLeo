@@ -13,7 +13,7 @@ RELEASE = '4'
 
 # open serial port. timeout should b e sufficient for any operation to finish.
 # timeout prevents crash in case of communication failure11111111111
-ser = serial.Serial('COM6', 115200, timeout=1.5)
+ser = serial.Serial('COM4', 115200, timeout=1.5)
 
 # ignore all past/pending inputs on the serial port
 def clear_input():
