@@ -23,7 +23,7 @@ PINOUT = { # too lazy to implement and enum right now
     'A_motor_power':        DEVICE_NAME + "/port0/line5",
     'thermocouple':         DEVICE_NAME + "/ai6",
     'stm_rst':              DEVICE_NAME + "/port1/line2",
-    'cryo_valve':              DEVICE_NAME + "/port2/line2"
+    'cryo_valve':              DEVICE_NAME + "/port1/line1"
 }
 
 

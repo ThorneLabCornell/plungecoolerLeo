@@ -94,7 +94,7 @@ def move_plunge():
     stm.clear_input()  # make sure no ACKs etc. are going to mess up plunge
     msg = '2' + str(stop_position).zfill(6) + str(timepoint_position).zfill(6) + '\r\n'
 
-    stm.brake_set(True)
+    #stm.brake_set(True) some changes
     stm.write(bytes(msg, 'utf-8'))
 
     # Start grabbing temp data if desired
@@ -117,7 +117,6 @@ def move_plunge():
     print("done plunge")
 
     stm.receivePlungeData()  # listen for the plunge data the stm sends
-    stm.reset()
     globs.plungeVelData.append(0)
     length=len(globs.plungePosData)-1
     print("pos")
@@ -137,6 +136,7 @@ def move_plunge():
     # for some reason the stm doesnt listen to the very first command after a plunge
     # TODO: fix this for real instead of a sketchy workaround. i'm at a loss for why this is happening.
     plunge_done_flag = True
+    stm.reset()
 
     if globs.readTemp_flag:  # if measuring temp, reclaim the thread
         tempT.join()
@@ -281,8 +281,9 @@ def home():
             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
             break
         if timer() - startT > 3:
-            epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
-            break
+             epos.VCS_SetQuickStopState(keyHandle, nodeID, byref(pErrorCode))
+             break
+        #maybe we should commented out because homing was having issues but maybe leave in cuz it might damage the motor if it operates for too long
     print("finish homing")
     stm.brake_set(True)
     home_task.stop()
@@ -312,7 +313,7 @@ def home():
 def plunge():
     print("pressseeed")
     print(abs(get_position()))
-    if abs(get_position()) > 75: # outside bounds of normal plunge condition, not homere properly
+    if abs(get_position()) > 100: # outside bounds of normal plunge condition, not homere properly
         return
     print("forward")
     pptimer = timer()
@@ -406,7 +407,7 @@ def plunge():
     globs.gui.current_pos_label.setText(str(value_n))  # update label with position
     globs.gui.graphVel.plot(globs.plungeTime, [pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData])  # plot collected data
     globs.gui.graphVelPos.plot([pos * (globs.leadscrew_inc / globs.encoder_pulse_num) for pos in globs.plungePosData], [vel * (globs.leadscrew_inc / globs.encoder_pulse_num) for vel in globs.plungeVelData])  # plot vel vs pos -- seet to plungePosData vs plungeData v vs pos
-
+    stm.brake_set(False) #added to make the plunger go down fully
     # print(get_position())
 
 

@@ -783,7 +783,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         self.brakeBox = QSpinBox(self)
         self.brakeBox.setMaximum(16000)  # max nudge value
         self.brakeBox.setMinimum(1)  # min nudge value
-        self.brakeBox.setValue(13600)  # default value
+        self.brakeBox.setValue(13550)  # default value
         self.brakeBox.setSingleStep(1)  # incremental/decremental value when arrows are pressed
 
         self.brakeBox.setFont(QFont('Munhwa Gothic', 40))

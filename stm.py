@@ -23,6 +23,7 @@ def clear_input():
 # set brake state
 def brake_set(state):
     print("brakin")
+    print(state);
     if state:
         print("brake")
         print(bytes(BRAKE + '\r\n', 'utf-8'))

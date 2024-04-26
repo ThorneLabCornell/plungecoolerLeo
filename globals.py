@@ -16,7 +16,7 @@ a_offset = 0        # A axis posn where the loop is level with the homed plunger
 a_position = 5000   # current posn of A axis
 
 ln2_level = 25000       # in plunge encoder steps
-plunge_speed = -5000    # negative for downwards motion. 8000=1.6ish m/s,10000 = 2ish m/s, 500units each 0.1m/s
+plunge_speed = -8000    # negative for downwards motion. 8000=1.6ish m/s,10000 = 2ish m/s, 500units each 0.1m/s
 
 '''assorted flags'''
 plunge_done_flag = False
