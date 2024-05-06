@@ -320,7 +320,7 @@ class MainWindow(QMainWindow):  # subclassing Qt class
         # connect buttons to associated functions
         # note: pressed allows to read when a button is initially clicked, clicked only runs func after release
         self.startNudge.clicked.connect(self.nudgeBegin)
-        self.upNudge.pressed.connect(self.upNudgeFunc)
+        #self.upNudge.pressed.connect(self.upNudgeFunc)
         self.stopButton.clicked.connect(self.stopNudge)
         self.downNudge.pressed.connect(self.downNudgeFunc)
 
