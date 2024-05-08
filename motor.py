@@ -268,7 +268,7 @@ def home():
     epos.VCS_SetVelocityProfile(keyHandle, nodeID, 4294967295, 4294967295, byref(pErrorCode))
     stm.brake_set(False)
 #            epos.VCS_FindHome(keyHandle, nodeID, -3, byref(pErrorCode))
-    epos.VCS_MoveWithVelocity(keyHandle, nodeID, 1000, byref(pErrorCode))
+    # epos.VCS_MoveWithVelocity(keyHandle, nodeID, 1000, byref(pErrorCode))`
 
     startT = timer()
     home_task = ni.startHome()
